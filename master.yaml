@@ -126,7 +126,7 @@ Resources:
   MyIAMRole:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-iam.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-iam.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -134,7 +134,7 @@ Resources:
   MyS3Bucket:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-s3bucket.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-s3bucket.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -143,7 +143,7 @@ Resources:
   MyVPC:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-vpc.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-vpc.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -157,7 +157,7 @@ Resources:
   MySecurityGroup:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-securitygroup.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-securitygroup.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -168,7 +168,7 @@ Resources:
   MyAPPELB:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-elb-appserver.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-appserver.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -181,7 +181,7 @@ Resources:
   MyAPPAutoScaling:
     Type: "AWS::CloudFormation::Stack"
     Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/docker-autoscaling-appserver.yaml"
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-appserver.yaml"
       TimeoutInMinutes: '5'
       Parameters:
         PMServerEnv: !Ref "AWS::StackName"
@@ -205,7 +205,7 @@ Resources:
 #    DependsOn:
 #    - "MyAPPAutoScaling"
 #    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/docker-elb-webserver.yaml"
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-webserver.yaml"
 #      TimeoutInMinutes: '5'
 #      Parameters:
 #        PMServerEnv: !Ref "AWS::StackName"
@@ -218,7 +218,7 @@ Resources:
 #    DependsOn:
 #    - "MyWEBELB"
 #    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/docker-autoscaling-webserver.yaml"
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-webserver.yaml"
 #      TimeoutInMinutes: '5'
 #      Parameters:
 #        PMServerEnv: !Ref "AWS::StackName"
@@ -240,7 +240,7 @@ Resources:
 #    DependsOn:
 #    - "MyWEBAutoScaling"
 #    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/docker-route53.yaml"
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-route53.yaml"
 #      TimeoutInMinutes: '5'
 #      Parameters:
 #        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
