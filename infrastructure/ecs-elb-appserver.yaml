@@ -1,0 +1,93 @@
+# Note, This template deploys an Application Load Balancer that exposes our PHP APP services.
+# Service : PHP-fpm Service listen to port 9000
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This template deploys an Application Load Balancer that exposes our PHP APP services.
+
+Parameters: 
+
+  PMServerEnv:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    AllowedValues: 
+      - "dev"
+      - "staging"
+      - "prod"
+
+  PMAPPELBSG:
+    Description: "Select the Security Group to use for the ELB"
+    Type: "AWS::EC2::SecurityGroup::Id"
+
+  PMPrivateSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  PMPublicSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  PMS3Logging:
+    Description: "S3 Logging Bucket Name"
+    Type: "String"
+
+####### Condition Setup #######
+Conditions: 
+  UseProdEnv: !Equals [ !Ref "PMServerEnv", "prod" ]
+
+####### Resources Setup #######
+Resources:
+
+  APPLoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      ConnectionDrainingPolicy:
+        Enabled: "true"
+        Timeout: "30"
+      CrossZone: "true"
+      AccessLoggingPolicy:
+        EmitInterval: '5'
+        Enabled: 'True'
+        S3BucketName: !Ref "PMS3Logging"
+        S3BucketPrefix: "APPELBLogs"
+      HealthCheck:
+        HealthyThreshold: '4'
+        Interval: '30'
+#        Target: "TCP:9000"
+#        Target: "TCP:9001"
+        Target: "TCP:22"
+        Timeout: '5'
+        UnhealthyThreshold: '6'
+      LoadBalancerName: !Sub "${PMServerEnv}-AppELB"
+      Listeners:
+      - InstancePort: '9000'
+        InstanceProtocol: "TCP"
+        LoadBalancerPort: '9000'
+        Protocol: "TCP"
+      - InstancePort: '9001'
+        InstanceProtocol: "TCP"
+        LoadBalancerPort: '9001'
+        Protocol: "TCP"
+      - InstancePort: '9002'
+        InstanceProtocol: "TCP"
+        LoadBalancerPort: '9002'
+        Protocol: "TCP"
+      Scheme: "internal"
+      SecurityGroups:
+      - Ref: "PMAPPELBSG"
+      Subnets: !If [ "UseProdEnv", !Ref "PMPrivateSubnets", !Ref "PMPublicSubnets" ]
+#      Subnets: !Ref "PMPrivateSubnets"
+#
+# Output LoadBalancer
+Outputs:
+  APPLoadBalancer:
+    Description: "A reference to the Application Load Balancer"
+    Value: !Ref "APPLoadBalancer"
+
+  APPLoadBalancerUrl:
+    Description: "The URL of the ALB"
+    Value: !GetAtt "APPLoadBalancer.DNSName"
+
+

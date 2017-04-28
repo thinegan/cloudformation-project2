@@ -1,0 +1,251 @@
+# Note : The Cloudformation Security Group IP address is open by default (testing purpose).
+# You should update Security Group Access with your own IP Address to ensure your instances security.
+#
+# Prerequisites
+# Before you can start this process, you need the following:
+# - Your AWS account must have one VPC available to be created in the selected region
+# - Amazon EC2 key pair
+# - Installed Domain in Route 53.
+# - Installed Certificate (in your selected region & also in us-east-1) 
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This is a master template to create a Microservice Architecture.
+    The following task will be built in this template.
+
+    Last Modified: 23th April 2017
+    Author: Thinegan Ratnam <thinegan@thinegan.com>
+
+###############################################################################################################
+
+Parameters: 
+
+  PMOWNIP:
+    Default: "0.0.0.0/0"
+    Description: "Update this with your own office/home public ip address"
+    Type: "String"
+
+  PMKeyName:
+    Default: "MyEC2Key"
+    Description: "Enter an existing EC2 KeyPair. Default is MyEC2Key."
+    Type: "String" 
+
+  PMTemplateURL:
+    Default: "https://s3-ap-southeast-1.amazonaws.com/cf-templates-19sg5y0d6d084-ap-southeast-1"
+    Description: "Enter an existing S3 Cloudformation Bucket."
+    Type: "String"
+
+  PMHostedZone:
+    Default: "kasturicookies.com"
+    Description: "Enter an existing Hosted Zone."
+    Type: "String"
+
+  PMInstanceType: 
+    Description: "Enter t2.micro or m1.small. Default is t2.micro."
+    Type: "String"
+    Default: "t2.micro"
+    AllowedValues: 
+      - "t2.micro"
+      - "m1.small"
+
+
+###############################################################################################################
+#
+# For any additional region & Env, you can add by yourself below.
+Mappings:
+  EnvMap:
+
+    dev:
+      ASMIN: '2'
+      ASMAX: '3'
+      ASDES: '2'
+      WEBDOMAIN: "dev.kasturicookies.com"
+      CDNDOMAIN: "devel.kasturicookies.com"
+
+    staging:
+      ASMIN: '2'
+      ASMAX: '3'
+      ASDES: '2'
+      WEBDOMAIN: "staging.kasturicookies.com"
+      CDNDOMAIN: "static.kasturicookies.com"
+
+    prod:
+      ASMIN: '2'
+      ASMAX: '5'
+      ASDES: '2'
+      WEBDOMAIN: "www.kasturicookies.com"
+      CDNDOMAIN: "cdn.kasturicookies.com"
+
+  RegionMap:
+    us-east-1:
+      # AMI Instance - Amazon Linux AMI 2016.09.1 (HVM), SSD Volume Type - ami-dc9339bf (Free tier eligible)
+      AMI: "ami-0b33d91d"
+      # AStorage - The storage class to which you want the object to transition.
+      AStorage: "GLACIER"
+      # Update with your own cert ARN HERE!
+      # Assuming you have already upload to AWS Certificate Manager
+      CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/eec1f4f2-2632-4d20-bd8a-fbfbcdb15920"
+
+    us-east-2:
+      AMI: "ami-c55673a0"
+      AStorage: "GLACIER"
+      CertARN: "arn:aws:acm:us-east-2:370888776060:certificate/893d447c-4f33-4585-9a48-78cade65e46d"
+
+    us-west-1:
+      AMI: "ami-165a0876"
+      AStorage: "GLACIER"
+      CertARN: "arn:aws:acm:us-west-1:370888776060:certificate/d05918e0-7646-4fc5-8405-025732b31d57"
+
+    us-west-2:
+      AMI: "ami-f173cc91"
+      AStorage: "GLACIER"
+      CertARN: "arn:aws:acm:us-west-2:370888776060:certificate/97648617-e7ab-4628-ba08-1d2f0ffce058"
+
+    ap-northeast-1:
+      AMI: "ami-56d4ad31"
+      AStorage: "GLACIER"
+      CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
+
+    ap-southeast-1:
+      #AMI: "ami-dc9339bf"
+      # Amazon ECS-Optimized Amazon Linux AMI (AWS MarketPlace)
+      AMI: "ami-b4ae1dd7"
+      AStorage: "STANDARD_IA"
+      CertARN: "arn:aws:acm:ap-southeast-1:370888776060:certificate/b06aa290-bb09-4fee-9e09-864c4cc8cc98"
+
+    ap-southeast-2:
+      AMI: "ami-1c47407f"
+      AStorage: "GLACIER"
+      CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
+
+###############################################################################################################
+
+Resources:
+
+  MyIAMRole:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-iam.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+
+  MyS3Bucket:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-s3bucket.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMRegionAStorage: !FindInMap ["RegionMap", !Ref "AWS::Region", "AStorage"]
+
+  MyVPC:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-vpc.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMVpcCIDR: "10.0.0.0/16"
+        PMPublicSubnet1CIDR: "10.0.1.0/24"
+        PMPublicSubnet2CIDR: "10.0.2.0/24"
+        PMPrivateSubnet1CIDR: "10.0.3.0/24"
+        PMPrivateSubnet2CIDR: "10.0.4.0/24"
+        PMFlowLogRole: !GetAtt "MyIAMRole.Outputs.VPCFlowLogRoleArn"
+
+  MySecurityGroup:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-securitygroup.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMOWNIP: !Ref "PMOWNIP"
+        PMVPC: !GetAtt "MyVPC.Outputs.VPC"
+        PMNACL: !GetAtt "MyVPC.Outputs.MyNetworkACL"
+
+  MyAPPELB:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-elb-appserver.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMAPPELBSG: !GetAtt "MySecurityGroup.Outputs.APPELBSG"
+        PMS3Logging: !GetAtt "MyS3Bucket.Outputs.S3Logging"
+        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+        PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
+
+
+  MyAPPAutoScaling:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/docker-autoscaling-appserver.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMKeyName: !Ref "PMKeyName"
+        PMInstanceType: !Ref "PMInstanceType"
+        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
+        PMAPPHostSG : !GetAtt "MySecurityGroup.Outputs.APPHostSG"
+        PMAPPLoadBalancer: !GetAtt "MyAPPELB.Outputs.APPLoadBalancer"
+        #PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
+        PMIAMECSInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMECSInstanceProfile"
+        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+        PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
+        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
+        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
+        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
+        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+
+
+#  MyWEBELB:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyAPPAutoScaling"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/docker-elb-webserver.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMServerEnv: !Ref "AWS::StackName"
+#        PMDomain1CertARN: !FindInMap ["RegionMap", !Ref "AWS::Region", "CertARN"]
+#        PMWEBELBSG: !GetAtt "MySecurityGroup.Outputs.WEBELBSG"
+#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+#
+#  MyWEBAutoScaling:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyWEBELB"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/docker-autoscaling-webserver.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMServerEnv: !Ref "AWS::StackName"
+#        PMKeyName: !Ref "PMKeyName"
+#        PMInstanceType: !Ref "PMInstanceType"
+#        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
+#        PMProxyHostSG: !GetAtt "MySecurityGroup.Outputs.ProxyHostSG"
+#        PMWEBLoadBalancer: !GetAtt "MyWEBELB.Outputs.WEBLoadBalancer"
+#        PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
+#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+#        PMAPPLoadBalancerUrl: !GetAtt "MyAPPELB.Outputs.APPLoadBalancerUrl"
+#        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
+#        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
+#        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
+#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+#
+#  MyDNS:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyWEBAutoScaling"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/docker-route53.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
+#        PMWEBLBHostedZoneId: !GetAtt "MyWEBELB.Outputs.WEBLBHostedZoneId"
+#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+#        PMHostedZone: !Ref "PMHostedZone"
+
+

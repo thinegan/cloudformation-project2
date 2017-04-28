@@ -1,0 +1,297 @@
+# Note, the development environment will only spin a min of 1 instance (Not HA Support)
+# The production environment will spin a min of 2 instance (HA support)
+# You can adjust the ASMIN, ASMAX, ASDES at the master.yaml file
+# to meet your instances spin numbers.
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This template deploys an AutoScaling Launch Config and Group for WebServer
+
+Parameters: 
+
+  PMServerEnv:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    AllowedValues: 
+      - "dev"
+      - "staging"
+      - "prod"
+
+  PMKeyName:
+    Description: "Enter an existing EC2 KeyPair. Default is MyEC2Key"
+    Type: "String"
+
+  PMInstanceType: 
+    Description: "Enter t2.micro or m1.small. Default is t2.micro."
+    Type: "String"
+    AllowedValues: 
+      - "t2.micro"
+      - "m1.small"
+
+  PMPublicSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  PMProxyHostSG:
+    Description: "Select the Security Group to use for the EC2 hosts"
+    Type: "AWS::EC2::SecurityGroup::Id"
+
+  PMWEBDOMAIN:
+    Description: "A reference to the Webserver domain name"
+    Type: "String"
+
+  PMAPPLoadBalancerUrl:
+    Description: "A reference to the AppServer Load Balancer"
+    Type: "String"
+
+  PMWEBLoadBalancer:
+    Description: "A reference to the Webserver Load Balancer"
+    Type: "String"
+
+  PMIAMS3CWInstanceProfile:
+    Description: "A reference to the IamInstanceProfile"
+    Type: "String"
+
+  PMRegionAMI:
+    Description: "A reference to the Region AMI"
+    Type: "String"
+
+  PMASMIN:
+    Description: "A reference to the MinSize"
+    Type: "String"
+
+  PMASMAX:
+    Description: "A reference to the MaxSize"
+    Type: "String"
+
+  PMASDES:
+    Description: "A reference to the DesiredCapacity"
+    Type: "String"
+
+
+Resources:
+
+  # Auto Scaling Launch Configuration
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties:
+      AssociatePublicIpAddress: "true"
+      KeyName:
+        Ref: "PMKeyName"
+      ImageId:
+        Ref: "PMRegionAMI"
+      InstanceType:
+        Ref: "PMInstanceType"
+      IamInstanceProfile:
+        Ref: "PMIAMS3CWInstanceProfile"
+      SecurityGroups:
+      - Ref: "PMProxyHostSG"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum install nginx htop telnet git awslogs python-pip aws-cfn-bootstrap -y
+          yum update -y
+          mkdir -p /etc/nginx/sites-enabled
+          mkdir -p /etc/nginx/sites-available
+
+          echo "[plugins]
+          cwlogs = cwlogs
+          [default]
+          region = ${AWS::Region}" > /etc/awslogs/awscli.conf
+          service awslogs start
+          chkconfig awslogs on
+
+          mkdir -p /home/www/public_html/${PMWEBDOMAIN}
+          echo "<?php phpinfo(); ?>" > /home/www/public_html/${PMWEBDOMAIN}/index.php
+          chown -R nginx:nginx /home/www/public_html/${PMWEBDOMAIN}
+          chmod -R +x /home/www/public_html/${PMWEBDOMAIN}
+
+          echo "server {
+          server_name ${PMWEBDOMAIN};
+          listen 80;
+          
+          root /home/www/public_html/${PMWEBDOMAIN}/;
+          index index.php index.html index.htm;
+
+          location / {
+          try_files \$uri \$uri/ /index.php?\$args;
+          }
+
+          location ~ \\.php\$ {
+          try_files \$uri =404;
+          fastcgi_split_path_info ^(.+\.php)(/.+)\$;
+          fastcgi_pass php;
+          fastcgi_index index.php;
+          fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+          include fastcgi_params;
+          fastcgi_read_timeout 300;
+          }
+          }" > /etc/nginx/sites-available/${PMWEBDOMAIN}
+
+          ln -sf /etc/nginx/sites-available/${PMWEBDOMAIN} /etc/nginx/sites-enabled/
+          
+          echo "server {
+          listen   80 default;
+          server_name  _;
+          access_log  /var/log/nginx/localhost.access.log;
+          location / {
+           root  /usr/share/nginx/html;
+          index index.html index.htm index.php;
+          }
+          }" > /etc/nginx/sites-available/default
+         
+          ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+         
+          echo "proxy_redirect		off;
+          client_body_buffer_size	256K;
+          client_max_body_size	12m;
+          proxy_connect_timeout	600;
+          proxy_send_timeout	600;
+          proxy_read_timeout	600;
+          proxy_buffer_size	128k;
+          proxy_buffers		4 256k;
+          proxy_busy_buffers_size	256k;" > /etc/nginx/proxy.conf
+
+          echo "user nginx;
+          worker_processes auto;
+          pid /var/run/nginx.pid;
+       
+          events {
+          worker_connections 1024;
+          multi_accept on;
+          use epoll;
+          }
+       
+          worker_rlimit_nofile 100000;
+
+          http {
+
+          ##
+          # Basic Settings 
+          ##
+          sendfile on;
+          tcp_nopush on;
+          tcp_nodelay on;
+          keepalive_timeout 65;
+          types_hash_max_size 2048;
+          server_tokens off;
+         
+          include /etc/nginx/mime.types;
+          default_type application/octet-stream;
+         
+          # set client body size to 32M #
+          client_max_body_size 32M;
+
+          ##
+          # Logging Settings
+          ##
+          access_log /var/log/nginx/access.log;
+          error_log /var/log/nginx/error.log;
+         
+          ##
+          # Gzip Settings
+          ##
+          gzip on;
+          gzip_disable "msie6";
+          gzip_static on;
+          gzip_vary on;
+          gzip_proxied any;
+          gzip_comp_level 9;
+          gzip_buffers 16 8k;
+          gzip_http_version 1.1;
+          gzip_types text/plain text/css text/csv application/json application/javascript application/x-javascript image/x-icon text/xml application/xml application/xml+rss text/javascript;
+       
+          ##
+          # open_file_cache optimization
+          ##
+          open_file_cache max=200000 inactive=50s;
+          open_file_cache_valid 60s;
+          open_file_cache_min_uses 2;
+          open_file_cache_errors on;
+       
+          ##
+          # Upstream Server
+          ##
+          upstream php {
+          server ${PMAPPLoadBalancerUrl}:9001;
+          server ${PMAPPLoadBalancerUrl}:9002;
+          }
+       
+          ##
+          # Virtual Host Configs
+          ##
+          include /etc/nginx/conf.d/*.conf;
+          include /etc/nginx/sites-enabled/*;
+          }" > /etc/nginx/nginx.conf
+
+          service nginx start
+          chkconfig nginx on
+          /opt/aws/bin/cfn-signal -e 0 -r 'server setup complete' "${WaitHandleWEB}"  > /tmp/userdata.log
+
+  WaitHandleWEB:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  WaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !Ref "WaitHandleWEB"
+      Timeout: '600'
+
+  # Auto Scaling Group Basic Setup
+  WebScalingGroup: 
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      MinSize: !Ref "PMASMIN"
+      MaxSize: !Ref "PMASMAX"
+      DesiredCapacity: !Ref "PMASDES"
+      LaunchConfigurationName:
+        Ref: "LaunchConfiguration"
+      VPCZoneIdentifier:
+        Ref: "PMPublicSubnets"
+      LoadBalancerNames:
+      - Ref: "PMWEBLoadBalancer"
+      HealthCheckGracePeriod: "300"
+      HealthCheckType: "ELB"
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${PMServerEnv}-WEBserver"
+        PropagateAtLaunch: 'true'
+
+  # Auto ScalingUp Policy - Basic Setup
+  WebServerScaleUpPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      AutoScalingGroupName:
+        Ref: "WebScalingGroup"
+      Cooldown: '300'
+      ScalingAdjustment: '1'
+
+  # Auto ScalingDown Policy - Basic Setup
+  WebServerScaleDownPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      AutoScalingGroupName:
+        Ref: "WebScalingGroup"
+      Cooldown: '300'
+      ScalingAdjustment: '-1'
+
+
+Outputs:
+
+  WebScalingGroup: 
+    Description: "Auto Scaling Group Reference ID"
+    Value: !Ref "WebScalingGroup"
+
+  WebServerScaleUpPolicy: 
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "WebServerScaleUpPolicy"
+
+  WebServerScaleDownPolicy: 
+    Description: "Auto Scaling Down Policy Reference ID"
+    Value: !Ref "WebServerScaleDownPolicy"
+
+

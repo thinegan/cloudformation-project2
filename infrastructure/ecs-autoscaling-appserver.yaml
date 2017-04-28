@@ -1,0 +1,407 @@
+# Note, the development environment will only spin a min of 1 instance (Not HA Support)
+# The production environment will spin a min of 2 instance (HA support)
+# You can adjust the ASMIN, ASMAX, ASDES at the master.yml file
+# to meet your instances spin numbers.
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This template deploys an AutoScaling Launch Config and Group
+
+Parameters: 
+
+  PMServerEnv:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    AllowedValues: 
+      - "dev"
+      - "staging"
+      - "prod"
+
+  PMKeyName:
+    Description: "Enter an existing EC2 KeyPair. Default is MyEC2Key"
+    Type: "String"
+
+  PMInstanceType: 
+    Description: "Enter t2.micro or m1.small. Default is t2.micro."
+    Type: "String"
+    AllowedValues: 
+      - "t2.micro"
+      - "m1.small"
+
+  PMPrivateSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  PMPublicSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+  PMAPPHostSG:
+    Description: "Select the Security Group to use for the EC2 hosts"
+    Type: "AWS::EC2::SecurityGroup::Id"
+
+  PMWEBDOMAIN:
+    Description: "A reference to the Application domain name"
+    Type: "String"
+
+  PMAPPLoadBalancer:
+    Description: "A reference to the Application Load Balancer"
+    Type: "String"
+
+  PMIAMECSInstanceProfile:
+    Description: "A reference to the IamInstanceProfile"
+    Type: "String"
+
+#  PMIAMS3CWInstanceProfile:
+#    Description: "A reference to the IamInstanceProfile"
+#    Type: "String"
+#
+#  PMECSServiceRoleInstanceProfile:
+#    Description: "A reference to the IamInstanceProfile"
+#    Type: "String"
+
+  PMRegionAMI:
+    Description: "A reference to the Region AMI"
+    Type: "String"
+
+  PMASMIN:
+    Description: "A reference to the MinSize"
+    Type: "String"
+
+  PMASMAX:
+    Description: "A reference to the MaxSize"
+    Type: "String"
+
+  PMASDES:
+    Description: "A reference to the DesiredCapacity"
+    Type: "String"
+
+####### Condition Setup #######
+Conditions: 
+  UseProdEnv: !Equals [ !Ref "PMServerEnv", "prod" ]
+
+
+####### Resources Setup #######
+Resources:
+
+  # Amazon EC2 Container Service (ECS) is a container management service that supports Docker containers 
+  # and allows you to easily run applications on a managed cluster of Amazon EC2 instances.
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Ref "PMServerEnv"
+
+
+#################################################################
+# Rule Set : 2
+#################################################################
+
+  ECSService:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '100'
+        MinimumHealthyPercent: '50'
+      DesiredCount: '2'
+      TaskDefinition: !Ref "ECSTaskDefinition"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set1'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      Role: !GetAtt "ServiceRole.Arn"
+    DependsOn:
+      - "ECSTaskDefinition"
+      - "ServiceRole"
+      - "AppScalingGroup"
+
+  ECSTaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set1"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9001"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set1"
+
+###########################################################################################
+
+#  ECSServiceSet2:
+#    Type: "AWS::ECS::Service"
+#    Properties:
+#      Cluster: !Ref "ECSCluster"
+#      DeploymentConfiguration:
+#        MaximumPercent: '100'
+#        MinimumHealthyPercent: '50'
+#      DesiredCount: '2'
+#      TaskDefinition: !Ref "ECSTaskSet2"
+#      LoadBalancers:
+#      - ContainerName: 'ecs-php-set2'
+#        ContainerPort: '9000'
+#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+#      Role: !GetAtt "ServiceRole.Arn"
+#    DependsOn:
+#      - "ECSTaskSet2"
+#      - "ServiceRole"
+#      - "AppScalingGroup"
+
+  ECSTaskSet2:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set2"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9002"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set2"
+
+#################################################################
+# Rule Set : 1
+#################################################################
+#
+#  ECSService:
+#    Type: "AWS::ECS::Service"
+#    Properties:
+#      Cluster: !Ref "ECSCluster"
+#      DeploymentConfiguration:
+#        MaximumPercent: '100'
+#        MinimumHealthyPercent: '50'
+#      DesiredCount: '1'
+#      TaskDefinition: !Ref "ECSTaskDefinition"
+#      LoadBalancers:
+#      - ContainerName: 'ecs-php-set1'
+#        ContainerPort: '9000'
+#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+#      Role: !GetAtt "ServiceRole.Arn"
+#    DependsOn:
+#      - "ECSTaskDefinition"
+#      - "ServiceRole"
+#      - "AppScalingGroup"
+#
+#  ECSService:
+#    Type: "AWS::ECS::Service"
+#    Properties:
+#      Cluster: !Ref "ECSCluster"
+#      DeploymentConfiguration:
+#        MaximumPercent: '100'
+#        MinimumHealthyPercent: '50'
+#      DesiredCount: '2'
+#      TaskDefinition: !Ref "ECSTaskDefinition"
+#      LoadBalancers:
+#      - ContainerName: 'ecs-php-set2'
+#        ContainerPort: '9000'
+#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+#      Role: !GetAtt "ServiceRole.Arn"
+#    DependsOn:
+#      - "ECSTaskDefinition"
+#      - "ServiceRole"
+#      - "AppScalingGroup"
+##
+#  ECSTaskDefinition:
+#    Type: "AWS::ECS::TaskDefinition"
+#    Properties:
+#      ContainerDefinitions:
+#        -
+#          Name: "ecs-php-set1"
+#          MountPoints:
+#            -
+#              SourceVolume: "my-app-vol"
+#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+#          Image: "thinegan/debian-php5"
+#          Cpu: "100"
+#          PortMappings:
+#            -
+#              ContainerPort: "9000"
+#              HostPort: "9001"
+#          EntryPoint:
+#            - "/usr/bin/supervisord"
+#            - "-c"
+#            - "/etc/supervisor/supervisord.conf"
+#          Memory: "200"
+#          Essential: "true"
+#        -
+#          Name: "ecs-php-set2"
+#          MountPoints:
+#            -
+#              SourceVolume: "my-app-vol"
+#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+#          Image: "thinegan/debian-php5"
+#          Cpu: "100"
+#          PortMappings:
+#            -
+#              ContainerPort: "9000"
+#              HostPort: "9002"
+#          EntryPoint:
+#            - "/usr/bin/supervisord"
+#            - "-c"
+#            - "/etc/supervisor/supervisord.conf"
+#          Memory: "200"
+#      Volumes:
+#        -
+#          Host:
+#            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+#          Name: "my-app-vol"
+#      Family: "dev-family"
+
+  ServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: 'Allow'
+          Principal:
+            Service: 'ecs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+
+  # Auto Scaling Launch Configuration
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    DependsOn : "ECSCluster"
+    Properties:
+      AssociatePublicIpAddress: "true"
+      #AssociatePublicIpAddress: "false"
+      KeyName:
+        Ref: "PMKeyName"
+      ImageId: 
+        Ref: "PMRegionAMI"
+      InstanceType:
+        Ref: "PMInstanceType"
+      IamInstanceProfile:
+        #Ref: "PMIAMS3CWInstanceProfile"
+        Ref: "PMIAMECSInstanceProfile"
+      SecurityGroups:
+      - Ref: "PMAPPHostSG"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum update -y
+          yum install htop vim telnet git awslogs python-pip aws-cfn-bootstrap nginx -y
+          yum remove nginx -y
+
+          echo ECS_CLUSTER=${PMServerEnv} >> /etc/ecs/ecs.config
+
+          echo "[plugins]
+          cwlogs = cwlogs
+          [default]
+          region = ${AWS::Region}" > /etc/awslogs/awscli.conf
+          service awslogs start
+          chkconfig awslogs on
+
+          mkdir -p /home/www/public_html/${PMWEBDOMAIN}
+          echo "<?php echo \"Docker Hostname: \".gethostname(); ?>" > /home/www/public_html/${PMWEBDOMAIN}/index.php
+          echo "<?php phpinfo(); ?>" >> /home/www/public_html/${PMWEBDOMAIN}/index.php
+          chown -R nginx:nginx /home/www/public_html/${PMWEBDOMAIN}
+          chmod -R +x /home/www/public_html/${PMWEBDOMAIN}
+
+          /opt/aws/bin/cfn-signal -e 0 -r 'server setup complete' "${WaitHandleAPP}"  > /tmp/userdata.log
+
+
+  WaitHandleAPP:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
+
+  WaitCondition:
+    Type: "AWS::CloudFormation::WaitCondition"
+    Properties:
+      Handle: !Ref "WaitHandleAPP"
+      Timeout: '300'
+
+  # Auto Scaling Group Basic Setup
+  AppScalingGroup: 
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      MinSize: !Ref "PMASMIN"
+      MaxSize: !Ref "PMASMAX"
+      DesiredCapacity: !Ref "PMASDES"
+      LaunchConfigurationName:
+        Ref: "LaunchConfiguration"
+      VPCZoneIdentifier: !If [ "UseProdEnv", !Ref "PMPrivateSubnets", !Ref "PMPublicSubnets" ]
+      #VPCZoneIdentifier: !Ref "PMPrivateSubnets"
+#      LoadBalancerNames:
+#      - Ref: "PMAPPLoadBalancer"
+#      HealthCheckGracePeriod: "300"
+#      HealthCheckType: "ELB"
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${PMServerEnv}-DockerHost"
+        PropagateAtLaunch: 'true'
+
+  # Auto ScalingUp Policy - Basic Setup
+  APPServerScaleUpPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      AutoScalingGroupName:
+        Ref: "AppScalingGroup"
+      Cooldown: '300'
+      ScalingAdjustment: '1'
+
+  # Auto ScalingDown Policy - Basic Setup
+  APPServerScaleDownPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      AutoScalingGroupName:
+        Ref: "AppScalingGroup"
+      Cooldown: '300'
+      ScalingAdjustment: '-1'
+      
+
+Outputs:
+
+  AppScalingGroup: 
+    Description: "Auto Scaling Group Reference ID"
+    Value: !Ref "AppScalingGroup"
+
+  APPServerScaleUpPolicy: 
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "APPServerScaleUpPolicy"
+
+  APPServerScaleDownPolicy: 
+    Description: "Auto Scaling Down Policy Reference ID"
+    Value: !Ref "APPServerScaleDownPolicy"
+
+

@@ -1,0 +1,135 @@
+# Note, This template deploys a Webserver Load Balancer that exposes our Nginx Proxy services.
+# Service : Nginx Service listen to port 80
+# SSL Termination is at ELB
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This template deploys an Webserver Load Balancer that exposes our Nginx Proxy services.
+
+Parameters: 
+
+  PMServerEnv:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    AllowedValues: 
+      - "dev"
+      - "staging"
+      - "prod"
+
+  PMWEBELBSG:
+    Description: "Select the Security Group to use for the ELB"
+    Type: "AWS::EC2::SecurityGroup::Id"
+
+  PMPublicSubnets:
+    Description: "Subnets to launch instances into"
+    Type: "List<AWS::EC2::Subnet::Id>"
+
+#  PMS3Backup:
+#    Description: "S3 Backup Bucket Name"
+#    Type: "String"
+#
+#  PMS3Logging:
+#    Description: "S3 Logging Bucket Name"
+#    Type: "String"
+
+  PMDomain1CertARN:
+    Description: "ARN for my domain name"
+    Type: "String"
+
+Resources:
+
+  WEBLoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      ConnectionDrainingPolicy:
+        Enabled: "true"
+        Timeout: "30"
+      CrossZone: "true"
+#      AccessLoggingPolicy:
+#        EmitInterval: '5'
+#        Enabled: 'True'
+#        S3BucketName: !Ref "PMS3Logging"
+#        S3BucketPrefix: "ELBLogs"
+      HealthCheck:
+        HealthyThreshold: '6'
+        Interval: '30'
+        Target: "HTTP:80/"
+        Timeout: '5'
+        UnhealthyThreshold: '8'
+      LoadBalancerName: !Sub "${PMServerEnv}-WebELB"
+      Listeners:
+      - InstancePort: '80'
+        InstanceProtocol: "HTTP"
+        LoadBalancerPort: '80'
+        Protocol: "HTTP"
+      - LoadBalancerPort: '443'
+        Protocol: "HTTPS"
+        InstancePort: '80'
+        InstanceProtocol: "HTTP"
+        SSLCertificateId: !Ref "PMDomain1CertARN"
+        PolicyNames:
+        - !Sub "${PMServerEnv}-SSLNegotiationPolicy"
+      # List aws elb describe-load-balancer-policies
+      Policies:
+      - PolicyName: !Sub "${PMServerEnv}-SSLNegotiationPolicy"
+        PolicyType: "SSLNegotiationPolicyType"
+        Attributes:
+        - Name: "Server-Defined-Cipher-Order"
+          Value: 'true'
+        - Name: "Protocol-TLSv1"
+          Value: 'false'
+        - Name: "Protocol-TLSv1.1"
+          Value: 'false'
+        - Name: "Protocol-TLSv1.2"
+          Value: 'true'
+        - Name: "Protocol-SSLv3"
+          Value: 'false'
+        - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
+          Value: 'true'
+        - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
+          Value: 'true'
+        - Name: "ECDHE-ECDSA-AES128-SHA256"
+          Value: 'true'
+        - Name: "ECDHE-RSA-AES128-SHA256"
+          Value: 'true'
+        - Name: "ECDHE-ECDSA-AES256-GCM-SHA384"
+          Value: 'true'
+        - Name: "ECDHE-RSA-AES256-GCM-SHA384"
+          Value: 'true'
+        - Name: "ECDHE-ECDSA-AES256-SHA384"
+          Value: 'true'
+        - Name: "ECDHE-RSA-AES256-SHA384"
+          Value: 'true'
+        - Name: "AES128-GCM-SHA256"
+          Value: 'true'
+        - Name: "AES128-SHA256"
+          Value: 'true'
+        - Name: "AES256-GCM-SHA384"
+          Value: 'true'
+        - Name: "AES256-SHA256"
+          Value: 'true'
+      Scheme: "internet-facing"
+      SecurityGroups:
+      - Ref: "PMWEBELBSG"
+      Subnets:
+        Ref: "PMPublicSubnets"
+
+# Output LoadBalancer
+Outputs:
+  WEBLoadBalancer:
+    Description: "A reference to the Web Load Balancer"
+    Value: !Ref "WEBLoadBalancer"
+
+  WEBLBDNSName:
+    Description: "The URL of the Web Load Balancer"
+    Value: !GetAtt "WEBLoadBalancer.DNSName"
+
+  WEBLBHostedZoneId:
+    Description: "The CanonicalHostedZoneNameID of the Web Load Balancer"
+    Value: !GetAtt "WEBLoadBalancer.CanonicalHostedZoneNameID"
+
+
+
+
