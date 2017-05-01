@@ -155,7 +155,7 @@ Resources:
         - Key: "Name"
           Value: !Sub "${PMServerEnv}-APPELBSG"
 
-  # Allow RDS connection from ProxyHostSG only.
+  # Allow RDS connection from ECS Cluster only.
   RDSSG:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
@@ -167,7 +167,7 @@ Resources:
       - FromPort: "3306"
         IpProtocol: "tcp"
         SourceSecurityGroupId:
-          Ref: "ProxyHostSG"
+          Ref: "APPHostSG"
         ToPort: "3306"
       VpcId:
         Ref: "PMVPC"
