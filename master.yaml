@@ -216,6 +216,7 @@ Resources:
         PMAPPLoadBalancer: !GetAtt "MyAPPELB.Outputs.APPLoadBalancer"
         PMIAMECSInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMECSInstanceProfile"
         PMIAMECSServiceRole: !GetAtt "MyIAMRole.Outputs.IAMECSServiceRole"
+        PMIAMECS: !GetAtt "MyIAMRole.Outputs.IAMECS"
         PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
         PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
@@ -223,86 +224,86 @@ Resources:
         PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
         PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
 
-  MyWEBELB:
-    Type: "AWS::CloudFormation::Stack"
-    DependsOn:
-    - "MyAPPAutoScaling"
-    Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-webserver.yaml"
-      TimeoutInMinutes: '5'
-      Parameters:
-        PMServerEnv: !Ref "AWS::StackName"
-        PMDomain1CertARN: !FindInMap ["RegionMap", !Ref "AWS::Region", "CertARN"]
-        PMWEBELBSG: !GetAtt "MySecurityGroup.Outputs.WEBELBSG"
-        PMS3Logging: !GetAtt "MyS3Bucket.Outputs.S3Logging"
-        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
-
-  MyWEBAutoScaling:
-    Type: "AWS::CloudFormation::Stack"
-    DependsOn:
-    - "MyWEBELB"
-    Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-webserver.yaml"
-      TimeoutInMinutes: '5'
-      Parameters:
-        PMServerEnv: !Ref "AWS::StackName"
-        PMKeyName: !Ref "PMKeyName"
-        PMInstanceType: !Ref "PMInstanceType"
-        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
-        PMProxyHostSG: !GetAtt "MySecurityGroup.Outputs.ProxyHostSG"
-        PMWEBLoadBalancer: !GetAtt "MyWEBELB.Outputs.WEBLoadBalancer"
-        PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
-        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
-        PMAPPLoadBalancerUrl: !GetAtt "MyAPPELB.Outputs.APPLoadBalancerUrl"
-        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
-        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
-        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
-        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-
-  MyDNS:
-    Type: "AWS::CloudFormation::Stack"
-    DependsOn:
-    - "MyWEBAutoScaling"
-    Properties:
-      TemplateURL: !Sub "${PMTemplateURL}/ecs-route53.yaml"
-      TimeoutInMinutes: '5'
-      Parameters:
-        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
-        PMWEBLBHostedZoneId: !GetAtt "MyWEBELB.Outputs.WEBLBHostedZoneId"
-        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-        PMHostedZone: !Ref "PMHostedZone"
-
-
-Outputs:
-
-  Webserver:
-    Description: "Web Server Site"
-    Value:
-      Fn::Join:
-        - ''
-        - - "http://"
-          - !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-          - "/"
-
-  # Own Certs
-  # https://cloudonaut.io/pitfall-acm-certificate-cloudfront-cloudformation/
-  # Error : The specified SSL certificate doesn't exist, isn't valid, or doesn't include a valid certificate chain.
-  # But the ACM certificate needs to be created in us-east-1 when used together with CloudFront. 
-  # So one possible solution was to create the CloudFormation stack in us-east-1. Lesson learned! :)
-  PMDomain1CertARN:
-    Description: "A reference to SSL Certificate ARN of the region"
-    Value: !FindInMap ["RegionMap", "us-east-1", "CertARN"]
-    Export:
-      Name: !Sub "${AWS::StackName}CDN-PMDomain1CertARN"
-
-  PMHostedZone:
-    Description: "A reference to SSL Certificate ARN of the region"
-    Value: !Ref "PMHostedZone"
-    Export:
-      Name: !Sub "${AWS::StackName}CDN-PMHostedZone"
-
-  PMCDNDOMAIN:
-    Description: "A reference to SSL Certificate ARN of the region"
-    Value: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CDNDOMAIN"]
-    Export:
-      Name: !Sub "${AWS::StackName}CDN-PMCDNDOMAIN"
+#  MyWEBELB:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyAPPAutoScaling"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-webserver.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMServerEnv: !Ref "AWS::StackName"
+#        PMDomain1CertARN: !FindInMap ["RegionMap", !Ref "AWS::Region", "CertARN"]
+#        PMWEBELBSG: !GetAtt "MySecurityGroup.Outputs.WEBELBSG"
+#        PMS3Logging: !GetAtt "MyS3Bucket.Outputs.S3Logging"
+#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+#
+#  MyWEBAutoScaling:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyWEBELB"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-webserver.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMServerEnv: !Ref "AWS::StackName"
+#        PMKeyName: !Ref "PMKeyName"
+#        PMInstanceType: !Ref "PMInstanceType"
+#        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
+#        PMProxyHostSG: !GetAtt "MySecurityGroup.Outputs.ProxyHostSG"
+#        PMWEBLoadBalancer: !GetAtt "MyWEBELB.Outputs.WEBLoadBalancer"
+#        PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
+#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+#        PMAPPLoadBalancerUrl: !GetAtt "MyAPPELB.Outputs.APPLoadBalancerUrl"
+#        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
+#        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
+#        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
+#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+#
+#  MyDNS:
+#    Type: "AWS::CloudFormation::Stack"
+#    DependsOn:
+#    - "MyWEBAutoScaling"
+#    Properties:
+#      TemplateURL: !Sub "${PMTemplateURL}/ecs-route53.yaml"
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
+#        PMWEBLBHostedZoneId: !GetAtt "MyWEBELB.Outputs.WEBLBHostedZoneId"
+#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+#        PMHostedZone: !Ref "PMHostedZone"
+#
+#
+#Outputs:
+#
+#  Webserver:
+#    Description: "Web Server Site"
+#    Value:
+#      Fn::Join:
+#        - ''
+#        - - "http://"
+#          - !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+#          - "/"
+#
+#  # Own Certs
+#  # https://cloudonaut.io/pitfall-acm-certificate-cloudfront-cloudformation/
+#  # Error : The specified SSL certificate doesn't exist, isn't valid, or doesn't include a valid certificate chain.
+#  # But the ACM certificate needs to be created in us-east-1 when used together with CloudFront. 
+#  # So one possible solution was to create the CloudFormation stack in us-east-1. Lesson learned! :)
+#  PMDomain1CertARN:
+#    Description: "A reference to SSL Certificate ARN of the region"
+#    Value: !FindInMap ["RegionMap", "us-east-1", "CertARN"]
+#    Export:
+#      Name: !Sub "${AWS::StackName}CDN-PMDomain1CertARN"
+#
+#  PMHostedZone:
+#    Description: "A reference to SSL Certificate ARN of the region"
+#    Value: !Ref "PMHostedZone"
+#    Export:
+#      Name: !Sub "${AWS::StackName}CDN-PMHostedZone"
+#
+#  PMCDNDOMAIN:
+#    Description: "A reference to SSL Certificate ARN of the region"
+#    Value: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CDNDOMAIN"]
+#    Export:
+#      Name: !Sub "${AWS::StackName}CDN-PMCDNDOMAIN"

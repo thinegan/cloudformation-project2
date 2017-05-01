@@ -1,5 +1,5 @@
 # Note, This template deploys an Application Load Balancer that exposes our PHP APP services.
-# Service : PHP-fpm Service listen to port 9000
+# Service : PHP-fpm Service listen to port 9001/9002/9003
 #
 ---
 AWSTemplateFormatVersion: "2010-09-09"
@@ -55,17 +55,11 @@ Resources:
       HealthCheck:
         HealthyThreshold: '4'
         Interval: '30'
-#        Target: "TCP:9000"
         Target: "TCP:9001"
-#        Target: "TCP:22"
         Timeout: '5'
         UnhealthyThreshold: '6'
       LoadBalancerName: !Sub "${PMServerEnv}-ALB"
       Listeners:
-#      - InstancePort: '9000'
-#        InstanceProtocol: "TCP"
-#        LoadBalancerPort: '9000'
-#        Protocol: "TCP"
       - InstancePort: '9001'
         InstanceProtocol: "TCP"
         LoadBalancerPort: '9001'
@@ -82,9 +76,8 @@ Resources:
       SecurityGroups:
       - Ref: "PMAPPELBSG"
       Subnets: !If [ "UseProdEnv", !Ref "PMPrivateSubnets", !Ref "PMPublicSubnets" ]
-#      Subnets: !Ref "PMPrivateSubnets"
-#
-# Output LoadBalancer
+      #Subnets: !Ref "PMPrivateSubnets"
+
 Outputs:
   APPLoadBalancer:
     Description: "A reference to the Application Load Balancer"

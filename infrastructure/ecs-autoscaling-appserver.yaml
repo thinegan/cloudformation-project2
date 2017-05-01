@@ -1,4 +1,4 @@
-# Note, the development environment will only spin a min of 1 instance (Not HA Support)
+# Note, the development environment will spin a min of 2 instance (HA Support)
 # The production environment will spin a min of 2 instance (HA support)
 # You can adjust the ASMIN, ASMAX, ASDES at the master.yml file
 # to meet your instances spin numbers.
@@ -54,17 +54,13 @@ Parameters:
     Description: "A reference to the IamInstanceProfile"
     Type: "String"
 
+  PMIAMECS:
+    Description: "A reference to the IamInstanceProfile"
+    Type: "String"
+
   PMIAMECSServiceRole:
     Description: "A reference to the Iam ECS Service Role"
     Type: "String"
-
-#  PMIAMS3CWInstanceProfile:
-#    Description: "A reference to the IamInstanceProfile"
-#    Type: "String"
-#
-#  PMECSServiceRoleInstanceProfile:
-#    Description: "A reference to the IamInstanceProfile"
-#    Type: "String"
 
   PMRegionAMI:
     Description: "A reference to the Region AMI"
@@ -115,15 +111,10 @@ Resources:
       - ContainerName: 'ecs-php-set1'
         ContainerPort: '9000'
         LoadBalancerName: !Ref "PMAPPLoadBalancer"
-      #Role: !GetAtt "ServiceRole.Arn"
-      #Role: !GetAtt "PMIAMECSServiceRole.Arn"
       Role: !Ref "PMIAMECSServiceRole"
     DependsOn:
       - "ECSTaskDefinition"
-      #- "ServiceRole"
       - "AppScalingGroup"
-
-# 	Template error: instance of Fn::GetAtt references undefined resource PMIAMECSServiceRole
 
   ECSTaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
@@ -169,11 +160,9 @@ Resources:
       - ContainerName: 'ecs-php-set2'
         ContainerPort: '9000'
         LoadBalancerName: !Ref "PMAPPLoadBalancer"
-      #Role: !GetAtt "ServiceRole.Arn"
       Role: !Ref "PMIAMECSServiceRole"
     DependsOn:
       - "ECSTaskSet2"
-      #- "ServiceRole"
       - "AppScalingGroup"
 
   ECSTaskSet2:
@@ -220,11 +209,9 @@ Resources:
       - ContainerName: 'ecs-php-set3'
         ContainerPort: '9000'
         LoadBalancerName: !Ref "PMAPPLoadBalancer"
-      #Role: !GetAtt "ServiceRole.Arn"
       Role: !Ref "PMIAMECSServiceRole"
     DependsOn:
       - "ECSTaskSet3"
-      #- "ServiceRole"
       - "AppScalingGroup"
 
   ECSTaskSet3:
@@ -256,106 +243,6 @@ Resources:
           Name: "my-app-vol"
       Family: "Task-set3"
 
-#################################################################
-# Rule Set : 1
-#################################################################
-#
-#  ECSService:
-#    Type: "AWS::ECS::Service"
-#    Properties:
-#      Cluster: !Ref "ECSCluster"
-#      DeploymentConfiguration:
-#        MaximumPercent: '100'
-#        MinimumHealthyPercent: '50'
-#      DesiredCount: '1'
-#      TaskDefinition: !Ref "ECSTaskDefinition"
-#      LoadBalancers:
-#      - ContainerName: 'ecs-php-set1'
-#        ContainerPort: '9000'
-#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-#      Role: !GetAtt "ServiceRole.Arn"
-#    DependsOn:
-#      - "ECSTaskDefinition"
-#      - "ServiceRole"
-#      - "AppScalingGroup"
-#
-#  ECSService:
-#    Type: "AWS::ECS::Service"
-#    Properties:
-#      Cluster: !Ref "ECSCluster"
-#      DeploymentConfiguration:
-#        MaximumPercent: '100'
-#        MinimumHealthyPercent: '50'
-#      DesiredCount: '2'
-#      TaskDefinition: !Ref "ECSTaskDefinition"
-#      LoadBalancers:
-#      - ContainerName: 'ecs-php-set2'
-#        ContainerPort: '9000'
-#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-#      Role: !GetAtt "ServiceRole.Arn"
-#    DependsOn:
-#      - "ECSTaskDefinition"
-#      - "ServiceRole"
-#      - "AppScalingGroup"
-##
-#  ECSTaskDefinition:
-#    Type: "AWS::ECS::TaskDefinition"
-#    Properties:
-#      ContainerDefinitions:
-#        -
-#          Name: "ecs-php-set1"
-#          MountPoints:
-#            -
-#              SourceVolume: "my-app-vol"
-#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Image: "thinegan/debian-php5"
-#          Cpu: "100"
-#          PortMappings:
-#            -
-#              ContainerPort: "9000"
-#              HostPort: "9001"
-#          EntryPoint:
-#            - "/usr/bin/supervisord"
-#            - "-c"
-#            - "/etc/supervisor/supervisord.conf"
-#          Memory: "200"
-#          Essential: "true"
-#        -
-#          Name: "ecs-php-set2"
-#          MountPoints:
-#            -
-#              SourceVolume: "my-app-vol"
-#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Image: "thinegan/debian-php5"
-#          Cpu: "100"
-#          PortMappings:
-#            -
-#              ContainerPort: "9000"
-#              HostPort: "9002"
-#          EntryPoint:
-#            - "/usr/bin/supervisord"
-#            - "-c"
-#            - "/etc/supervisor/supervisord.conf"
-#          Memory: "200"
-#      Volumes:
-#        -
-#          Host:
-#            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Name: "my-app-vol"
-#      Family: "dev-family"
-
-#  ServiceRole:
-#    Type: 'AWS::IAM::Role'
-#    Properties:
-#      ManagedPolicyArns:
-#      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
-#      AssumeRolePolicyDocument:
-#        Version: '2008-10-17'
-#        Statement:
-#        - Effect: 'Allow'
-#          Principal:
-#            Service: 'ecs.amazonaws.com'
-#          Action: 'sts:AssumeRole'
 
   # Auto Scaling Launch Configuration
   LaunchConfiguration:
@@ -371,7 +258,6 @@ Resources:
       InstanceType:
         Ref: "PMInstanceType"
       IamInstanceProfile:
-        #Ref: "PMIAMS3CWInstanceProfile"
         Ref: "PMIAMECSInstanceProfile"
       SecurityGroups:
       - Ref: "PMAPPHostSG"

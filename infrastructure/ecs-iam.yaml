@@ -95,7 +95,6 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       ManagedPolicyArns: 
-        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
         - "arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess"
         - "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
       AssumeRolePolicyDocument: 
@@ -137,6 +136,10 @@ Resources:
 
 
 Outputs:
+
+  IAMECS:
+    Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
+    Value: !Ref "IAMECS"
 
   IAMECSServiceRole:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
