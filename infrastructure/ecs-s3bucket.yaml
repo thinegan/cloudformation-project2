@@ -1,4 +1,4 @@
-# Note: Total of 3 buckets will be deploy
+# Note: Total of 1 buckets will be deploy
 # This is due to each isolated functions
 #
 # https://forums.aws.amazon.com/thread.jspa?threadID=221113
@@ -8,8 +8,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
     This template to deploys S3 buckets
-    - Bucket 1, Backup Data with security data at rest and archive objects greater than 60 days.
-    - Bucket 2, ELB logging and archive objects greater than 60 days.
+    - Bucket S3Logging, ELB logging and archive objects greater than 60 days.
 
 Parameters: 
 

@@ -90,7 +90,7 @@ Resources:
           Value: !Sub "${PMServerEnv}-WEBELBSG"
 
   # App Server Security Group
-  # PHP-fpm (port 9000)
+  # PHP-fpm (port 9001-9003)
   APPHostSG:
     Type: "AWS::EC2::SecurityGroup"
     Properties: 
@@ -103,11 +103,6 @@ Resources:
           FromPort: "22"
           IpProtocol: "tcp"
           ToPort: "22"
-        - FromPort: "9000"
-          IpProtocol: "tcp"
-          SourceSecurityGroupId:
-            Ref: "APPELBSG"
-          ToPort: "9000"
         - FromPort: "9001"
           IpProtocol: "tcp"
           SourceSecurityGroupId:
@@ -139,11 +134,6 @@ Resources:
       - IpProtocol: "-1"
         CidrIp: "0.0.0.0/0"
       SecurityGroupIngress:
-        - FromPort: "9000"
-          IpProtocol: "tcp"
-          SourceSecurityGroupId:
-            Ref: "ProxyHostSG"
-          ToPort: "9000"
         - FromPort: "9001"
           IpProtocol: "tcp"
           SourceSecurityGroupId:
