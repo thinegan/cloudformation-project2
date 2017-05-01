@@ -83,6 +83,8 @@ Mappings:
       # AMI Details: https://aws.amazon.com/marketplace/pp/B06XS8WHGJ?ref=cns_srchrow
       # Amazon ECS-Optimized Amazon Linux AMI (From AWS MarketPlace)
       AMI: "ami-275ffe31"
+      # AStorage - The storage class to which you want the object to transition.
+      AStorage: "GLACIER"
       # Update with your own cert ARN HERE!
       # Assuming you have already upload to AWS Certificate Manager
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/eec1f4f2-2632-4d20-bd8a-fbfbcdb15920"
@@ -91,31 +93,37 @@ Mappings:
     # Ohio
     us-east-2:
       AMI: "ami-62745007"
+      AStorage: "GLACIER"
       CertARN: "arn:aws:acm:us-east-2:370888776060:certificate/893d447c-4f33-4585-9a48-78cade65e46d"
 
     # N.California
     us-west-1:
       AMI: "ami-689bc208"
+      AStorage: "GLACIER"
       CertARN: "arn:aws:acm:us-west-1:370888776060:certificate/d05918e0-7646-4fc5-8405-025732b31d57"
 
     # Oregon
     us-west-2:
       AMI: "ami-62d35c02"
+      AStorage: "GLACIER"
       CertARN: "arn:aws:acm:us-west-2:370888776060:certificate/97648617-e7ab-4628-ba08-1d2f0ffce058"
 
     # Tokyo
     ap-northeast-1:
       AMI: "ami-f63f6f91"
+      AStorage: "GLACIER"
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
 
     # Singapore
     ap-southeast-1:
       AMI: "ami-b4ae1dd7"
+      AStorage: "STANDARD_IA"
       CertARN: "arn:aws:acm:ap-southeast-1:370888776060:certificate/b06aa290-bb09-4fee-9e09-864c4cc8cc98"
 
     # Sydney
     ap-southeast-2:
       AMI: "ami-fbe9eb98"
+      AStorage: "GLACIER"
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
 
 ###############################################################################################################
