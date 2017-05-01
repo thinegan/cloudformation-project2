@@ -54,6 +54,10 @@ Parameters:
     Description: "A reference to the IamInstanceProfile"
     Type: "String"
 
+  PMIAMECSServiceRole:
+    Description: "A reference to the Iam ECS Service Role"
+    Type: "String"
+
 #  PMIAMS3CWInstanceProfile:
 #    Description: "A reference to the IamInstanceProfile"
 #    Type: "String"
@@ -111,11 +115,15 @@ Resources:
       - ContainerName: 'ecs-php-set1'
         ContainerPort: '9000'
         LoadBalancerName: !Ref "PMAPPLoadBalancer"
-      Role: !GetAtt "ServiceRole.Arn"
+      #Role: !GetAtt "ServiceRole.Arn"
+      #Role: !GetAtt "PMIAMECSServiceRole.Arn"
+      Role: !Ref "PMIAMECSServiceRole"
     DependsOn:
       - "ECSTaskDefinition"
-      - "ServiceRole"
+      #- "ServiceRole"
       - "AppScalingGroup"
+
+# 	Template error: instance of Fn::GetAtt references undefined resource PMIAMECSServiceRole
 
   ECSTaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
@@ -148,24 +156,25 @@ Resources:
 
 ###########################################################################################
 
-#  ECSServiceSet2:
-#    Type: "AWS::ECS::Service"
-#    Properties:
-#      Cluster: !Ref "ECSCluster"
-#      DeploymentConfiguration:
-#        MaximumPercent: '100'
-#        MinimumHealthyPercent: '50'
-#      DesiredCount: '2'
-#      TaskDefinition: !Ref "ECSTaskSet2"
-#      LoadBalancers:
-#      - ContainerName: 'ecs-php-set2'
-#        ContainerPort: '9000'
-#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-#      Role: !GetAtt "ServiceRole.Arn"
-#    DependsOn:
-#      - "ECSTaskSet2"
-#      - "ServiceRole"
-#      - "AppScalingGroup"
+  ECSServiceSet2:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '100'
+        MinimumHealthyPercent: '50'
+      DesiredCount: '2'
+      TaskDefinition: !Ref "ECSTaskSet2"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set2'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      #Role: !GetAtt "ServiceRole.Arn"
+      Role: !Ref "PMIAMECSServiceRole"
+    DependsOn:
+      - "ECSTaskSet2"
+      #- "ServiceRole"
+      - "AppScalingGroup"
 
   ECSTaskSet2:
     Type: "AWS::ECS::TaskDefinition"
@@ -195,6 +204,57 @@ Resources:
             SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
           Name: "my-app-vol"
       Family: "Task-set2"
+
+###########################################################################################
+
+  ECSServiceSet3:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '100'
+        MinimumHealthyPercent: '50'
+      DesiredCount: '2'
+      TaskDefinition: !Ref "ECSTaskSet3"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set3'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      #Role: !GetAtt "ServiceRole.Arn"
+      Role: !Ref "PMIAMECSServiceRole"
+    DependsOn:
+      - "ECSTaskSet3"
+      #- "ServiceRole"
+      - "AppScalingGroup"
+
+  ECSTaskSet3:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set3"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9003"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set3"
 
 #################################################################
 # Rule Set : 1
@@ -284,18 +344,18 @@ Resources:
 #          Name: "my-app-vol"
 #      Family: "dev-family"
 
-  ServiceRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
-      AssumeRolePolicyDocument:
-        Version: '2008-10-17'
-        Statement:
-        - Effect: 'Allow'
-          Principal:
-            Service: 'ecs.amazonaws.com'
-          Action: 'sts:AssumeRole'
+#  ServiceRole:
+#    Type: 'AWS::IAM::Role'
+#    Properties:
+#      ManagedPolicyArns:
+#      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+#      AssumeRolePolicyDocument:
+#        Version: '2008-10-17'
+#        Statement:
+#        - Effect: 'Allow'
+#          Principal:
+#            Service: 'ecs.amazonaws.com'
+#          Action: 'sts:AssumeRole'
 
   # Auto Scaling Launch Configuration
   LaunchConfiguration:

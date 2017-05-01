@@ -118,6 +118,11 @@ Resources:
           SourceSecurityGroupId:
             Ref: "APPELBSG"
           ToPort: "9002"
+        - FromPort: "9003"
+          IpProtocol: "tcp"
+          SourceSecurityGroupId:
+            Ref: "APPELBSG"
+          ToPort: "9003"
       SecurityGroupEgress:
         - IpProtocol: '-1'
           CidrIp: '0.0.0.0/0'
@@ -149,6 +154,11 @@ Resources:
           SourceSecurityGroupId:
             Ref: "ProxyHostSG"
           ToPort: "9002"
+        - FromPort: "9003"
+          IpProtocol: "tcp"
+          SourceSecurityGroupId:
+            Ref: "ProxyHostSG"
+          ToPort: "9003"
       VpcId:
         Ref: "PMVPC"
       Tags:

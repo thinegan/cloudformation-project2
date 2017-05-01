@@ -78,45 +78,44 @@ Mappings:
       CDNDOMAIN: "cdn.kasturicookies.com"
 
   RegionMap:
+    # N.Virginia
     us-east-1:
-      # AMI Instance - Amazon Linux AMI 2016.09.1 (HVM), SSD Volume Type - ami-dc9339bf (Free tier eligible)
-      AMI: "ami-0b33d91d"
-      # AStorage - The storage class to which you want the object to transition.
-      AStorage: "GLACIER"
+      # AMI Details: https://aws.amazon.com/marketplace/pp/B06XS8WHGJ?ref=cns_srchrow
+      # Amazon ECS-Optimized Amazon Linux AMI (From AWS MarketPlace)
+      AMI: "ami-275ffe31"
       # Update with your own cert ARN HERE!
       # Assuming you have already upload to AWS Certificate Manager
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/eec1f4f2-2632-4d20-bd8a-fbfbcdb15920"
 
+
+    # Ohio
     us-east-2:
-      AMI: "ami-c55673a0"
-      AStorage: "GLACIER"
+      AMI: "ami-62745007"
       CertARN: "arn:aws:acm:us-east-2:370888776060:certificate/893d447c-4f33-4585-9a48-78cade65e46d"
 
+    # N.California
     us-west-1:
-      AMI: "ami-165a0876"
-      AStorage: "GLACIER"
+      AMI: "ami-689bc208"
       CertARN: "arn:aws:acm:us-west-1:370888776060:certificate/d05918e0-7646-4fc5-8405-025732b31d57"
 
+    # Oregon
     us-west-2:
-      AMI: "ami-f173cc91"
-      AStorage: "GLACIER"
+      AMI: "ami-62d35c02"
       CertARN: "arn:aws:acm:us-west-2:370888776060:certificate/97648617-e7ab-4628-ba08-1d2f0ffce058"
 
+    # Tokyo
     ap-northeast-1:
-      AMI: "ami-56d4ad31"
-      AStorage: "GLACIER"
+      AMI: "ami-f63f6f91"
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
 
+    # Singapore
     ap-southeast-1:
-      #AMI: "ami-dc9339bf"
-      # Amazon ECS-Optimized Amazon Linux AMI (AWS MarketPlace)
       AMI: "ami-b4ae1dd7"
-      AStorage: "STANDARD_IA"
       CertARN: "arn:aws:acm:ap-southeast-1:370888776060:certificate/b06aa290-bb09-4fee-9e09-864c4cc8cc98"
 
+    # Sydney
     ap-southeast-2:
-      AMI: "ami-1c47407f"
-      AStorage: "GLACIER"
+      AMI: "ami-fbe9eb98"
       CertARN: "arn:aws:acm:us-east-1:370888776060:certificate/4696461e-df6b-4000-963b-68c1628f0bac"
 
 ###############################################################################################################
@@ -177,7 +176,6 @@ Resources:
         PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
 
-
   MyAPPAutoScaling:
     Type: "AWS::CloudFormation::Stack"
     Properties:
@@ -190,8 +188,8 @@ Resources:
         PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
         PMAPPHostSG : !GetAtt "MySecurityGroup.Outputs.APPHostSG"
         PMAPPLoadBalancer: !GetAtt "MyAPPELB.Outputs.APPLoadBalancer"
-        #PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
         PMIAMECSInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMECSInstanceProfile"
+        PMIAMECSServiceRole: !GetAtt "MyIAMRole.Outputs.IAMECSServiceRole"
         PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
         PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
@@ -199,53 +197,86 @@ Resources:
         PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
         PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
 
+  MyWEBELB:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    - "MyAPPAutoScaling"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-webserver.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMDomain1CertARN: !FindInMap ["RegionMap", !Ref "AWS::Region", "CertARN"]
+        PMWEBELBSG: !GetAtt "MySecurityGroup.Outputs.WEBELBSG"
+        PMS3Logging: !GetAtt "MyS3Bucket.Outputs.S3Logging"
+        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
 
-#  MyWEBELB:
-#    Type: "AWS::CloudFormation::Stack"
-#    DependsOn:
-#    - "MyAPPAutoScaling"
-#    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/ecs-elb-webserver.yaml"
-#      TimeoutInMinutes: '5'
-#      Parameters:
-#        PMServerEnv: !Ref "AWS::StackName"
-#        PMDomain1CertARN: !FindInMap ["RegionMap", !Ref "AWS::Region", "CertARN"]
-#        PMWEBELBSG: !GetAtt "MySecurityGroup.Outputs.WEBELBSG"
-#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
-#
-#  MyWEBAutoScaling:
-#    Type: "AWS::CloudFormation::Stack"
-#    DependsOn:
-#    - "MyWEBELB"
-#    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-webserver.yaml"
-#      TimeoutInMinutes: '5'
-#      Parameters:
-#        PMServerEnv: !Ref "AWS::StackName"
-#        PMKeyName: !Ref "PMKeyName"
-#        PMInstanceType: !Ref "PMInstanceType"
-#        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
-#        PMProxyHostSG: !GetAtt "MySecurityGroup.Outputs.ProxyHostSG"
-#        PMWEBLoadBalancer: !GetAtt "MyWEBELB.Outputs.WEBLoadBalancer"
-#        PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
-#        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
-#        PMAPPLoadBalancerUrl: !GetAtt "MyAPPELB.Outputs.APPLoadBalancerUrl"
-#        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
-#        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
-#        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
-#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-#
-#  MyDNS:
-#    Type: "AWS::CloudFormation::Stack"
-#    DependsOn:
-#    - "MyWEBAutoScaling"
-#    Properties:
-#      TemplateURL: !Sub "${PMTemplateURL}/ecs-route53.yaml"
-#      TimeoutInMinutes: '5'
-#      Parameters:
-#        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
-#        PMWEBLBHostedZoneId: !GetAtt "MyWEBELB.Outputs.WEBLBHostedZoneId"
-#        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-#        PMHostedZone: !Ref "PMHostedZone"
+  MyWEBAutoScaling:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    - "MyWEBELB"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-webserver.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        PMKeyName: !Ref "PMKeyName"
+        PMInstanceType: !Ref "PMInstanceType"
+        PMRegionAMI: !FindInMap ["RegionMap", !Ref "AWS::Region", "AMI"]
+        PMProxyHostSG: !GetAtt "MySecurityGroup.Outputs.ProxyHostSG"
+        PMWEBLoadBalancer: !GetAtt "MyWEBELB.Outputs.WEBLoadBalancer"
+        PMIAMS3CWInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMS3CWInstanceProfile"
+        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
+        PMAPPLoadBalancerUrl: !GetAtt "MyAPPELB.Outputs.APPLoadBalancerUrl"
+        PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
+        PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
+        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
+        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+
+  MyDNS:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    - "MyWEBAutoScaling"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-route53.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMWEBLBDNSName: !GetAtt "MyWEBELB.Outputs.WEBLBDNSName"
+        PMWEBLBHostedZoneId: !GetAtt "MyWEBELB.Outputs.WEBLBHostedZoneId"
+        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+        PMHostedZone: !Ref "PMHostedZone"
 
 
+Outputs:
+
+  Webserver:
+    Description: "Web Server Site"
+    Value:
+      Fn::Join:
+        - ''
+        - - "http://"
+          - !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+          - "/"
+
+  # Own Certs
+  # https://cloudonaut.io/pitfall-acm-certificate-cloudfront-cloudformation/
+  # Error : The specified SSL certificate doesn't exist, isn't valid, or doesn't include a valid certificate chain.
+  # But the ACM certificate needs to be created in us-east-1 when used together with CloudFront. 
+  # So one possible solution was to create the CloudFormation stack in us-east-1. Lesson learned! :)
+  PMDomain1CertARN:
+    Description: "A reference to SSL Certificate ARN of the region"
+    Value: !FindInMap ["RegionMap", "us-east-1", "CertARN"]
+    Export:
+      Name: !Sub "${AWS::StackName}CDN-PMDomain1CertARN"
+
+  PMHostedZone:
+    Description: "A reference to SSL Certificate ARN of the region"
+    Value: !Ref "PMHostedZone"
+    Export:
+      Name: !Sub "${AWS::StackName}CDN-PMHostedZone"
+
+  PMCDNDOMAIN:
+    Description: "A reference to SSL Certificate ARN of the region"
+    Value: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CDNDOMAIN"]
+    Export:
+      Name: !Sub "${AWS::StackName}CDN-PMCDNDOMAIN"

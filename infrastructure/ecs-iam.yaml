@@ -122,62 +122,25 @@ Resources:
 
 
 
-
-  ECSServiceRole:
-    Type: "AWS::IAM::Role"
+  IAMECSServiceRole:
+    Type: 'AWS::IAM::Role'
     Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
       AssumeRolePolicyDocument:
+        Version: '2008-10-17'
         Statement:
-          - 
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "ecs.amazonaws.com"
-                - "ec2.amazonaws.com"
-                - "ecs-tasks.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-      - PolicyName: "ecs-service"
-        PolicyDocument:
-          Statement:
-          - Effect: "Allow"
-            Action:
-            - "elasticloadbalancing:Describe*"
-            - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
-            - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
-            - "ec2:Describe*"
-            - "ec2:AuthorizeSecurityGroupIngress"
-            - "elasticloadbalancing:DeregisterTargets"
-            - "elasticloadbalancing:RegisterTargets"
-            - "ecs:CreateCluster"
-            - "ecs:DeregisterContainerInstance"
-            - "ecs:DiscoverPollEndpoint"
-            - "ecs:Poll"
-            - "ecs:RegisterContainerInstance"
-            - "ecs:StartTelemetrySession"
-            - "ecs:Submit*"
-            - "ecr:GetAuthorizationToken"
-            - "ecr:BatchCheckLayerAvailability"
-            - "ecr:GetDownloadUrlForLayer"
-            - "ecr:BatchGetImage"
-            Resource: "*"
-
-  ECSServiceRoleInstanceProfile: 
-    Type: "AWS::IAM::InstanceProfile"
-    Properties: 
-      Path: "/"
-      Roles: 
-        - 
-          Ref: "ECSServiceRole"
+        - Effect: 'Allow'
+          Principal:
+            Service: 'ecs.amazonaws.com'
+          Action: 'sts:AssumeRole'
 
 
 Outputs:
 
-  ECSServiceRoleInstanceProfile:
+  IAMECSServiceRole:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
-    Value: !Ref "ECSServiceRoleInstanceProfile"
+    Value: !Ref "IAMECSServiceRole"
 
   IAMS3CWInstanceProfile:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"

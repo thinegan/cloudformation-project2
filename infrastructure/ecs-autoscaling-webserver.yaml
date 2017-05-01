@@ -217,6 +217,7 @@ Resources:
           upstream php {
           server ${PMAPPLoadBalancerUrl}:9001;
           server ${PMAPPLoadBalancerUrl}:9002;
+          server ${PMAPPLoadBalancerUrl}:9003;
           }
        
           ##

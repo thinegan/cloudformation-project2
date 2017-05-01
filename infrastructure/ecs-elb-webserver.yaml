@@ -30,9 +30,9 @@ Parameters:
 #    Description: "S3 Backup Bucket Name"
 #    Type: "String"
 #
-#  PMS3Logging:
-#    Description: "S3 Logging Bucket Name"
-#    Type: "String"
+  PMS3Logging:
+    Description: "S3 Logging Bucket Name"
+    Type: "String"
 
   PMDomain1CertARN:
     Description: "ARN for my domain name"
@@ -47,18 +47,18 @@ Resources:
         Enabled: "true"
         Timeout: "30"
       CrossZone: "true"
-#      AccessLoggingPolicy:
-#        EmitInterval: '5'
-#        Enabled: 'True'
-#        S3BucketName: !Ref "PMS3Logging"
-#        S3BucketPrefix: "ELBLogs"
+      AccessLoggingPolicy:
+        EmitInterval: '5'
+        Enabled: 'True'
+        S3BucketName: !Ref "PMS3Logging"
+        S3BucketPrefix: "WLBLogs"
       HealthCheck:
         HealthyThreshold: '6'
         Interval: '30'
         Target: "HTTP:80/"
         Timeout: '5'
         UnhealthyThreshold: '8'
-      LoadBalancerName: !Sub "${PMServerEnv}-WebELB"
+      LoadBalancerName: !Sub "${PMServerEnv}-WLB"
       Listeners:
       - InstancePort: '80'
         InstanceProtocol: "HTTP"

@@ -51,21 +51,21 @@ Resources:
         EmitInterval: '5'
         Enabled: 'True'
         S3BucketName: !Ref "PMS3Logging"
-        S3BucketPrefix: "APPELBLogs"
+        S3BucketPrefix: "ALBLogs"
       HealthCheck:
         HealthyThreshold: '4'
         Interval: '30'
 #        Target: "TCP:9000"
-#        Target: "TCP:9001"
-        Target: "TCP:22"
+        Target: "TCP:9001"
+#        Target: "TCP:22"
         Timeout: '5'
         UnhealthyThreshold: '6'
-      LoadBalancerName: !Sub "${PMServerEnv}-AppELB"
+      LoadBalancerName: !Sub "${PMServerEnv}-ALB"
       Listeners:
-      - InstancePort: '9000'
-        InstanceProtocol: "TCP"
-        LoadBalancerPort: '9000'
-        Protocol: "TCP"
+#      - InstancePort: '9000'
+#        InstanceProtocol: "TCP"
+#        LoadBalancerPort: '9000'
+#        Protocol: "TCP"
       - InstancePort: '9001'
         InstanceProtocol: "TCP"
         LoadBalancerPort: '9001'
@@ -73,6 +73,10 @@ Resources:
       - InstancePort: '9002'
         InstanceProtocol: "TCP"
         LoadBalancerPort: '9002'
+        Protocol: "TCP"
+      - InstancePort: '9003'
+        InstanceProtocol: "TCP"
+        LoadBalancerPort: '9003'
         Protocol: "TCP"
       Scheme: "internal"
       SecurityGroups:
