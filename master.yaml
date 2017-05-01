@@ -172,6 +172,24 @@ Resources:
         PMVPC: !GetAtt "MyVPC.Outputs.VPC"
         PMNACL: !GetAtt "MyVPC.Outputs.MyNetworkACL"
 
+  MyRDS:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    - "MySecurityGroup"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-rds.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        PMServerEnv: !Ref "AWS::StackName"
+        DatabaseUser: "startupadmin"
+        DatabasePassword: "0bee082a464"
+        DatabaseName: !Sub "${AWS::StackName}db"
+        DatabaseSize: '5'
+        DatabaseEngine: "mysql"
+        DatabaseInstanceClass: "db.t2.micro"
+        PMRDSSG: !GetAtt "MySecurityGroup.Outputs.RDSSG"
+        PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
+
   MyAPPELB:
     Type: "AWS::CloudFormation::Stack"
     Properties:
