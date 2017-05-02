@@ -9,17 +9,26 @@ Description: >
 
 Parameters: 
 
-#  PMWebScalingGroup:
-#    Description: "A reference to the WebServer AutoScalingGroup"
-#    Type: "String"
-#
-#  PMWebServerScaleUpPolicy:
-#    Description: "A reference to the WebServer ScaleUpPolicy"
-#    Type: "String"
-#
-#  PMWebServerScaleDownPolicy:
-#    Description: "A reference to the WebServer ScaleDownPolicy"
-#    Type: "String"
+  PMServerEnv:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    AllowedValues: 
+      - "dev"
+      - "staging"
+      - "prod"
+
+  PMWebScalingGroup:
+    Description: "A reference to the WebServer AutoScalingGroup"
+    Type: "String"
+
+  PMWebServerScaleUpPolicy:
+    Description: "A reference to the WebServer ScaleUpPolicy"
+    Type: "String"
+
+  PMWebServerScaleDownPolicy:
+    Description: "A reference to the WebServer ScaleDownPolicy"
+    Type: "String"
 
   PMAppScalingGroup:
     Description: "A reference to the AppServer AutoScalingGroup"
@@ -33,46 +42,70 @@ Parameters:
     Description: "A reference to the AppServer ScaleDownPolicy"
     Type: "String"
 
+  PMECSScaleUpPolicySet1:
+    Description: "A reference to the Docker service ScaleUpPolicy"
+    Type: "String"
+
+  PMECSScaleDownPolicySet1:
+    Description: "A reference to the Docker service ScaleDownPolicy"
+    Type: "String"
+
+  PMECSScaleUpPolicySet2:
+    Description: "A reference to the Docker service ScaleUpPolicy"
+    Type: "String"
+
+  PMECSScaleDownPolicySet2:
+    Description: "A reference to the Docker service ScaleDownPolicy"
+    Type: "String"
+
+  PMECSScaleUpPolicySet3:
+    Description: "A reference to the Docker service ScaleUpPolicy"
+    Type: "String"
+
+  PMECSScaleDownPolicySet3:
+    Description: "A reference to the Docker service ScaleDownPolicy"
+    Type: "String"
+
 
 Resources:
 
   #  Web Server Alarm High Load
-#  WebCPUAlarmHigh:
-#    Type: "AWS::CloudWatch::Alarm"
-#    Properties:
-#      AlarmDescription: "Scale-up if CPU > 80% for 5 minutes"
-#      MetricName: "CPUUtilization"
-#      Namespace: "AWS/EC2"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '80'
-#      AlarmActions:
-#      - Ref: "PMWebServerScaleUpPolicy"
-#      Dimensions:
-#      - Name: "AutoScalingGroupName"
-#        Value:
-#          Ref: "PMWebScalingGroup"
-#      ComparisonOperator: "GreaterThanThreshold"
+  WebCPUAlarmHigh:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: "Scale-up if CPU > 80% for 5 minutes"
+      MetricName: "CPUUtilization"
+      Namespace: "AWS/EC2"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '80'
+      AlarmActions:
+      - Ref: "PMWebServerScaleUpPolicy"
+      Dimensions:
+      - Name: "AutoScalingGroupName"
+        Value:
+          Ref: "PMWebScalingGroup"
+      ComparisonOperator: "GreaterThanThreshold"
 
   # Web Server Alarm Low Load
-#  WebCPUAlarmLow:
-#    Type: "AWS::CloudWatch::Alarm"
-#    Properties:
-#      AlarmDescription: "Scale-down if CPU < 25% for 5 minutes"
-#      MetricName: "CPUUtilization"
-#      Namespace: "AWS/EC2"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '25'
-#      AlarmActions:
-#      - Ref: "PMWebServerScaleDownPolicy"
-#      Dimensions:
-#      - Name: "AutoScalingGroupName"
-#        Value:
-#          Ref: "PMWebScalingGroup"
-#      ComparisonOperator: "GreaterThanThreshold"
+  WebCPUAlarmLow:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: "Scale-down if CPU < 25% for 5 minutes"
+      MetricName: "CPUUtilization"
+      Namespace: "AWS/EC2"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '25'
+      AlarmActions:
+      - Ref: "PMWebServerScaleDownPolicy"
+      Dimensions:
+      - Name: "AutoScalingGroupName"
+        Value:
+          Ref: "PMWebScalingGroup"
+      ComparisonOperator: "GreaterThanThreshold"
 
   #  App Server Alarm High Load
   AppCPUAlarmHigh:
@@ -112,16 +145,142 @@ Resources:
           Ref: "PMAppScalingGroup"
       ComparisonOperator: "GreaterThanThreshold"
 
+  ECSCPUAlarmHighSet1:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '80'
+      AlarmActions:
+      - !Ref "PMECSScaleUpPolicySet1"
+
+  ECSCPUAlarmLowSet1:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '25'
+      AlarmActions:
+      - !Ref "PMECSScaleDownPolicySet1"
+
+  ECSCPUAlarmHighSet2:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '80'
+      AlarmActions:
+      - !Ref "PMECSScaleUpPolicySet2"
+
+  ECSCPUAlarmLowSet2:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '25'
+      AlarmActions:
+      - !Ref "PMECSScaleDownPolicySet2"
+
+  ECSCPUAlarmHighSet3:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '80'
+      AlarmActions:
+      - !Ref "PMECSScaleUpPolicySet3"
+
+  ECSCPUAlarmLowSet3:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: "ClusterName"
+        Value: !Ref "PMServerEnv"
+      MetricName: "CPUUtilization"
+      ComparisonOperator: "GreaterThanThreshold"
+      Statistic: "Average"
+      Period: '300'
+      EvaluationPeriods: '1'
+      Threshold: '25'
+      AlarmActions:
+      - !Ref "PMECSScaleDownPolicySet3"
+
 
 Outputs:
 
-#  WebTrafficAlarmHigh:
-#    Description: "CloudWatch Reference Web AlarmHigh"
-#    Value: !Ref "WebCPUAlarmHigh"
-#
-#  WebTrafficAlarmLow: 
-#    Description: "CloudWatch Reference Web AlarmLow"
-#    Value: !Ref "WebCPUAlarmLow"
+  ECSCPUAlarmHighSet1:
+    Description: "CloudWatch Reference ECS AlarmHigh"
+    Value: !Ref "ECSCPUAlarmHighSet1"
+
+  ECSCPUAlarmLowSet1:
+    Description: "CloudWatch Reference ECS AlarmLow"
+    Value: !Ref "ECSCPUAlarmLowSet1"
+
+  ECSCPUAlarmHighSet2:
+    Description: "CloudWatch Reference ECS AlarmHigh"
+    Value: !Ref "ECSCPUAlarmHighSet2"
+
+  ECSCPUAlarmLowSet2:
+    Description: "CloudWatch Reference ECS AlarmLow"
+    Value: !Ref "ECSCPUAlarmLowSet2"
+
+  ECSCPUAlarmHighSet3:
+    Description: "CloudWatch Reference ECS AlarmHigh"
+    Value: !Ref "ECSCPUAlarmHighSet3"
+
+  ECSCPUAlarmLowSet3:
+    Description: "CloudWatch Reference ECS AlarmLow"
+    Value: !Ref "ECSCPUAlarmLowSet3"
+
+  WebTrafficAlarmHigh:
+    Description: "CloudWatch Reference Web AlarmHigh"
+    Value: !Ref "WebCPUAlarmHigh"
+
+  WebTrafficAlarmLow: 
+    Description: "CloudWatch Reference Web AlarmLow"
+    Value: !Ref "WebCPUAlarmLow"
 
   AppTrafficAlarmHigh: 
     Description: "CloudWatch Reference App AlarmHigh"

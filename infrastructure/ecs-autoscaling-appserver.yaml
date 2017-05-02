@@ -97,57 +97,209 @@ Resources:
     Properties:
       ClusterName: !Ref "PMServerEnv"
 
+#################################################################
+# Task Set : 1
+#################################################################
+
   ECSServiceScalableTargetSet1:
     Type: "AWS::ApplicationAutoScaling::ScalableTarget"
     Properties:
-      MaxCapacity: '3'
-      MinCapacity: '2'
+      MaxCapacity: !Ref "PMASMAX"
+      MinCapacity: !Ref "PMASMIN"
       ResourceId:
         Fn::Join:
         - "/"
         - - "service"
           - Ref: "ECSCluster"
           - Fn::GetAtt:
-            - "ECSService"
+            - "ECSServiceSet1"
             - "Name"
       RoleARN: !Ref "PMIAMScalableTargetRole"
       ScalableDimension: "ecs:service:DesiredCount"
       ServiceNamespace: "ecs"
 
-#  ECSServiceScalableTargetSet2:
-#    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
-#    Properties:
-#      MaxCapacity: '2'
-#      MinCapacity: '2'
-#      ResourceId:
-#        Fn::Join:
-#        - "/"
-#        - - "service"
-#          - Ref: "ECSCluster"
-#          - Fn::GetAtt:
-#            - "ECSServiceSet2"
-#            - "Name"
-#      RoleARN: !Ref "PMIAMScalableTargetRole"
-#      ScalableDimension: "ecs:service:DesiredCount"
-#      ServiceNamespace: "ecs"
-#
-#  ECSServiceScalableTargetSet3:
-#    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
-#    Properties:
-#      MaxCapacity: '2'
-#      MinCapacity: '2'
-#      ResourceId:
-#        Fn::Join:
-#        - "/"
-#        - - "service"
-#          - Ref: "ECSCluster"
-#          - Fn::GetAtt:
-#            - "ECSServiceSet3"
-#            - "Name"
-#      RoleARN: !Ref "PMIAMScalableTargetRole"
-#      ScalableDimension: "ecs:service:DesiredCount"
-#      ServiceNamespace: "ecs"
+  ECSServiceSet1:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '200'
+        MinimumHealthyPercent: '100'
+      DesiredCount: !Ref "PMASDES"
+      TaskDefinition: !Ref "ECSTaskDefinitionSet1"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set1'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      Role: !Ref "PMIAMECSServiceRole"
+    DependsOn:
+      - "ECSTaskDefinitionSet1"
+      - "AppScalingGroup"
 
+  ECSTaskDefinitionSet1:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set1"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9001"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set1"
+
+#################################################################
+# Task Set : 2
+#################################################################
+
+  ECSServiceScalableTargetSet2:
+    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+    Properties:
+      MaxCapacity: !Ref "PMASMAX"
+      MinCapacity: !Ref "PMASMIN"
+      ResourceId:
+        Fn::Join:
+        - "/"
+        - - "service"
+          - Ref: "ECSCluster"
+          - Fn::GetAtt:
+            - "ECSServiceSet2"
+            - "Name"
+      RoleARN: !Ref "PMIAMScalableTargetRole"
+      ScalableDimension: "ecs:service:DesiredCount"
+      ServiceNamespace: "ecs"
+
+  ECSServiceSet2:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '200'
+        MinimumHealthyPercent: '100'
+      DesiredCount: !Ref "PMASDES"
+      TaskDefinition: !Ref "ECSTaskDefinitionSet2"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set2'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      Role: !Ref "PMIAMECSServiceRole"
+    DependsOn:
+      - "ECSTaskDefinitionSet2"
+      - "AppScalingGroup"
+
+  ECSTaskDefinitionSet2:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set2"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9002"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set2"
+
+#################################################################
+# Task Set : 3
+#################################################################
+
+  ECSServiceScalableTargetSet3:
+    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+    Properties:
+      MaxCapacity: !Ref "PMASMAX"
+      MinCapacity: !Ref "PMASMIN"
+      ResourceId:
+        Fn::Join:
+        - "/"
+        - - "service"
+          - Ref: "ECSCluster"
+          - Fn::GetAtt:
+            - "ECSServiceSet3"
+            - "Name"
+      RoleARN: !Ref "PMIAMScalableTargetRole"
+      ScalableDimension: "ecs:service:DesiredCount"
+      ServiceNamespace: "ecs"
+
+  ECSServiceSet3:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref "ECSCluster"
+      DeploymentConfiguration:
+        MaximumPercent: '200'
+        MinimumHealthyPercent: '100'
+      DesiredCount: !Ref "PMASDES"
+      TaskDefinition: !Ref "ECSTaskDefinitionSet3"
+      LoadBalancers:
+      - ContainerName: 'ecs-php-set3'
+        ContainerPort: '9000'
+        LoadBalancerName: !Ref "PMAPPLoadBalancer"
+      Role: !Ref "PMIAMECSServiceRole"
+    DependsOn:
+      - "ECSTaskDefinitionSet3"
+      - "AppScalingGroup"
+
+  ECSTaskDefinitionSet3:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+        -
+          Name: "ecs-php-set3"
+          MountPoints:
+            -
+              SourceVolume: "my-app-vol"
+              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Image: "thinegan/debian-php5"
+          Cpu: "300"
+          PortMappings:
+            -
+              ContainerPort: "9000"
+              HostPort: "9003"
+          EntryPoint:
+            - "/usr/bin/supervisord"
+            - "-c"
+            - "/etc/supervisor/supervisord.conf"
+          Memory: "300"
+          Essential: "true"
+      Volumes:
+        -
+          Host:
+            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
+          Name: "my-app-vol"
+      Family: "Task-set3"
 
 #################################################################
 # ECS Scaling Policy Set 1
@@ -181,324 +333,70 @@ Resources:
         - MetricIntervalLowerBound: '0'
           ScalingAdjustment: '-100'
 
-  CPUUtilizationHighAlarmSet1:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: "ClusterName"
-        Value: !Ref "PMServerEnv"
-      MetricName: "CPUUtilization"
-      ComparisonOperator: "GreaterThanThreshold"
-      Statistic: "Average"
-      Period: '300'
-      EvaluationPeriods: '1'
-      Threshold: '80'
-      AlarmActions:
-      - !Ref "ECSScaleUpPolicySet1"
-
-  CPUUtilizationLowAlarmSet1:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: "ClusterName"
-        Value: !Ref "PMServerEnv"
-      MetricName: "CPUUtilization"
-      ComparisonOperator: "GreaterThanThreshold"
-      Statistic: "Average"
-      Period: '300'
-      EvaluationPeriods: '1'
-      Threshold: '25'
-      AlarmActions:
-      - !Ref "ECSScaleDownPolicySet1"
-
 #################################################################
 # ECS Scaling Policy Set 2
 #################################################################
-#
-#  ECSScaleUpPolicySet2:
-#    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
-#    Properties:
-#      PolicyName: !Sub '${AWS::StackName}-ecs-scale-up'
-#      PolicyType: "StepScaling"
-#      ScalingTargetId: !Ref "ECSServiceScalableTargetSet2"
-#      StepScalingPolicyConfiguration: 
-#        AdjustmentType: "PercentChangeInCapacity"
-#        Cooldown: '300'
-#        MinAdjustmentMagnitude: '1'
-#        StepAdjustments:
-#        - MetricIntervalLowerBound: '0'
-#          ScalingAdjustment: '100'
-#
-#  ECSScaleDownPolicySet2:
-#    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
-#    Properties:
-#      PolicyName: !Sub '${AWS::StackName}-ecs-scale-down'
-#      PolicyType: "StepScaling"
-#      ScalingTargetId: !Ref "ECSServiceScalableTargetSet2"
-#      StepScalingPolicyConfiguration: 
-#        AdjustmentType: "PercentChangeInCapacity"
-#        Cooldown: '300'
-#        MinAdjustmentMagnitude: '1'
-#        StepAdjustments:
-#        - MetricIntervalLowerBound: '0'
-#          ScalingAdjustment: '-100'
-#
-#  CPUUtilizationHighAlarmSet2:
-#    Type: 'AWS::CloudWatch::Alarm'
-#    Properties:
-#      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
-#      Namespace: 'AWS/ECS'
-#      Dimensions:
-#      - Name: "ClusterName"
-#        Value: !Ref "PMServerEnv"
-#      MetricName: "CPUUtilization"
-#      ComparisonOperator: "GreaterThanThreshold"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '80'
-#      AlarmActions:
-#      - !Ref "ECSScaleUpPolicySet2"
-#
-#  CPUUtilizationLowAlarmSet2:
-#    Type: 'AWS::CloudWatch::Alarm'
-#    Properties:
-#      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
-#      Namespace: 'AWS/ECS'
-#      Dimensions:
-#      - Name: "ClusterName"
-#        Value: !Ref "PMServerEnv"
-#      MetricName: "CPUUtilization"
-#      ComparisonOperator: "GreaterThanThreshold"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '25'
-#      AlarmActions:
-#      - !Ref "ECSScaleDownPolicySet2"
-#
+
+  ECSScaleUpPolicySet2:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
+    Properties:
+      PolicyName: !Sub '${AWS::StackName}-ecs-scale-up'
+      PolicyType: "StepScaling"
+      ScalingTargetId: !Ref "ECSServiceScalableTargetSet2"
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: "PercentChangeInCapacity"
+        Cooldown: '300'
+        MinAdjustmentMagnitude: '1'
+        StepAdjustments:
+        - MetricIntervalLowerBound: '0'
+          ScalingAdjustment: '100'
+
+  ECSScaleDownPolicySet2:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
+    Properties:
+      PolicyName: !Sub '${AWS::StackName}-ecs-scale-down'
+      PolicyType: "StepScaling"
+      ScalingTargetId: !Ref "ECSServiceScalableTargetSet2"
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: "PercentChangeInCapacity"
+        Cooldown: '300'
+        MinAdjustmentMagnitude: '1'
+        StepAdjustments:
+        - MetricIntervalLowerBound: '0'
+          ScalingAdjustment: '-100'
+
 #################################################################
 # ECS Scaling Policy Set 3
 #################################################################
-#
-#  ECSScaleUpPolicySet3:
-#    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
-#    Properties:
-#      PolicyName: !Sub '${AWS::StackName}-ecs-scale-up'
-#      PolicyType: "StepScaling"
-#      ScalingTargetId: !Ref "ECSServiceScalableTargetSet3"
-#      StepScalingPolicyConfiguration: 
-#        AdjustmentType: "PercentChangeInCapacity"
-#        Cooldown: '300'
-#        MinAdjustmentMagnitude: '1'
-#        StepAdjustments:
-#        - MetricIntervalLowerBound: '0'
-#          ScalingAdjustment: '100'
-#
-#  ECSScaleDownPolicySet3:
-#    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
-#    Properties:
-#      PolicyName: !Sub '${AWS::StackName}-ecs-scale-down'
-#      PolicyType: "StepScaling"
-#      ScalingTargetId: !Ref "ECSServiceScalableTargetSet3"
-#      StepScalingPolicyConfiguration: 
-#        AdjustmentType: "PercentChangeInCapacity"
-#        Cooldown: '300'
-#        MinAdjustmentMagnitude: '1'
-#        StepAdjustments:
-#        - MetricIntervalLowerBound: '0'
-#          ScalingAdjustment: '-100'
-#
-#  CPUUtilizationHighAlarmSet3:
-#    Type: 'AWS::CloudWatch::Alarm'
-#    Properties:
-#      AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
-#      Namespace: 'AWS/ECS'
-#      Dimensions:
-#      - Name: "ClusterName"
-#        Value: !Ref "PMServerEnv"
-#      MetricName: "CPUUtilization"
-#      ComparisonOperator: "GreaterThanThreshold"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '80'
-#      AlarmActions:
-#      - !Ref "ECSScaleUpPolicySet3"
-#
-#  CPUUtilizationLowAlarmSet3:
-#    Type: 'AWS::CloudWatch::Alarm'
-#    Properties:
-#      AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
-#      Namespace: 'AWS/ECS'
-#      Dimensions:
-#      - Name: "ClusterName"
-#        Value: !Ref "PMServerEnv"
-#      MetricName: "CPUUtilization"
-#      ComparisonOperator: "GreaterThanThreshold"
-#      Statistic: "Average"
-#      Period: '300'
-#      EvaluationPeriods: '1'
-#      Threshold: '25'
-#      AlarmActions:
-#      - !Ref "ECSScaleDownPolicySet3"
-#
-#################################################################
-# Rule Set : 1
-#################################################################
 
-  ECSService:
-    Type: "AWS::ECS::Service"
+  ECSScaleUpPolicySet3:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
     Properties:
-      Cluster: !Ref "ECSCluster"
-      DeploymentConfiguration:
-        MaximumPercent: '200'
-        MinimumHealthyPercent: '100'
-      DesiredCount: '2'
-      TaskDefinition: !Ref "ECSTaskDefinition"
-      LoadBalancers:
-      - ContainerName: 'ecs-php-set1'
-        ContainerPort: '9000'
-        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-      Role: !Ref "PMIAMECSServiceRole"
-    DependsOn:
-      - "ECSTaskDefinition"
-      - "AppScalingGroup"
+      PolicyName: !Sub '${AWS::StackName}-ecs-scale-up'
+      PolicyType: "StepScaling"
+      ScalingTargetId: !Ref "ECSServiceScalableTargetSet3"
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: "PercentChangeInCapacity"
+        Cooldown: '300'
+        MinAdjustmentMagnitude: '1'
+        StepAdjustments:
+        - MetricIntervalLowerBound: '0'
+          ScalingAdjustment: '100'
 
-  ECSTaskDefinition:
-    Type: "AWS::ECS::TaskDefinition"
+  ECSScaleDownPolicySet3:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
     Properties:
-      ContainerDefinitions:
-        -
-          Name: "ecs-php-set1"
-          MountPoints:
-            -
-              SourceVolume: "my-app-vol"
-              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-          Image: "thinegan/debian-php5"
-          Cpu: "900"
-          PortMappings:
-            -
-              ContainerPort: "9000"
-              HostPort: "9001"
-          EntryPoint:
-            - "/usr/bin/supervisord"
-            - "-c"
-            - "/etc/supervisor/supervisord.conf"
-          Memory: "900"
-          Essential: "true"
-      Volumes:
-        -
-          Host:
-            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-          Name: "my-app-vol"
-      Family: "Task-set1"
+      PolicyName: !Sub '${AWS::StackName}-ecs-scale-down'
+      PolicyType: "StepScaling"
+      ScalingTargetId: !Ref "ECSServiceScalableTargetSet3"
+      StepScalingPolicyConfiguration: 
+        AdjustmentType: "PercentChangeInCapacity"
+        Cooldown: '300'
+        MinAdjustmentMagnitude: '1'
+        StepAdjustments:
+        - MetricIntervalLowerBound: '0'
+          ScalingAdjustment: '-100'
 
-#################################################################
-# Rule Set : 2
-#################################################################
-#
-#  ECSServiceSet2:
-#    Type: "AWS::ECS::Service"
-#    Properties:
-#      Cluster: !Ref "ECSCluster"
-#      DeploymentConfiguration:
-#        MaximumPercent: '100'
-#        MinimumHealthyPercent: '50'
-#      DesiredCount: '2'
-#      TaskDefinition: !Ref "ECSTaskSet2"
-#      LoadBalancers:
-#      - ContainerName: 'ecs-php-set2'
-#        ContainerPort: '9000'
-#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-#      Role: !Ref "PMIAMECSServiceRole"
-#    DependsOn:
-#      - "ECSTaskSet2"
-#      - "AppScalingGroup"
-#
-#  ECSTaskSet2:
-#    Type: "AWS::ECS::TaskDefinition"
-#    Properties:
-#      ContainerDefinitions:
-#        -
-#          Name: "ecs-php-set2"
-#          MountPoints:
-#            -
-#              SourceVolume: "my-app-vol"
-#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Image: "thinegan/debian-php5"
-#          Cpu: "300"
-#          PortMappings:
-#            -
-#              ContainerPort: "9000"
-#              HostPort: "9002"
-#          EntryPoint:
-#            - "/usr/bin/supervisord"
-#            - "-c"
-#            - "/etc/supervisor/supervisord.conf"
-#          Memory: "300"
-#          Essential: "true"
-#      Volumes:
-#        -
-#          Host:
-#            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Name: "my-app-vol"
-#      Family: "Task-set2"
-#
-#################################################################
-# Rule Set : 3
-#################################################################
-#
-#  ECSServiceSet3:
-#    Type: "AWS::ECS::Service"
-#    Properties:
-#      Cluster: !Ref "ECSCluster"
-#      DeploymentConfiguration:
-#        MaximumPercent: '100'
-#        MinimumHealthyPercent: '50'
-#      DesiredCount: '2'
-#      TaskDefinition: !Ref "ECSTaskSet3"
-#      LoadBalancers:
-#      - ContainerName: 'ecs-php-set3'
-#        ContainerPort: '9000'
-#        LoadBalancerName: !Ref "PMAPPLoadBalancer"
-#      Role: !Ref "PMIAMECSServiceRole"
-#    DependsOn:
-#      - "ECSTaskSet3"
-#      - "AppScalingGroup"
-#
-#  ECSTaskSet3:
-#    Type: "AWS::ECS::TaskDefinition"
-#    Properties:
-#      ContainerDefinitions:
-#        -
-#          Name: "ecs-php-set3"
-#          MountPoints:
-#            -
-#              SourceVolume: "my-app-vol"
-#              ContainerPath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Image: "thinegan/debian-php5"
-#          Cpu: "300"
-#          PortMappings:
-#            -
-#              ContainerPort: "9000"
-#              HostPort: "9003"
-#          EntryPoint:
-#            - "/usr/bin/supervisord"
-#            - "-c"
-#            - "/etc/supervisor/supervisord.conf"
-#          Memory: "300"
-#          Essential: "true"
-#      Volumes:
-#        -
-#          Host:
-#            SourcePath: !Sub "/home/www/public_html/${PMWEBDOMAIN}"
-#          Name: "my-app-vol"
-#      Family: "Task-set3"
 
 
   # Auto Scaling Launch Configuration
@@ -594,6 +492,30 @@ Resources:
       
 
 Outputs:
+
+  ECSScaleUpPolicySet1: 
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleUpPolicySet1"
+
+  ECSScaleDownPolicySet1: 
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleDownPolicySet1"
+
+  ECSScaleUpPolicySet2: 
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleUpPolicySet2"
+
+  ECSScaleDownPolicySet2:
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleDownPolicySet2"
+
+  ECSScaleUpPolicySet3:
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleUpPolicySet3"
+
+  ECSScaleDownPolicySet3:
+    Description: "Auto Scaling Up Policy Reference ID"
+    Value: !Ref "ECSScaleDownPolicySet3"
 
   AppScalingGroup: 
     Description: "Auto Scaling Group Reference ID"
