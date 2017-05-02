@@ -204,6 +204,8 @@ Resources:
 
   MyAPPAutoScaling:
     Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    - "MyAPPELB"
     Properties:
       TemplateURL: !Sub "${PMTemplateURL}/ecs-autoscaling-appserver.yaml"
       TimeoutInMinutes: '5'
@@ -217,6 +219,7 @@ Resources:
         PMIAMECSInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMECSInstanceProfile"
         PMIAMECSServiceRole: !GetAtt "MyIAMRole.Outputs.IAMECSServiceRole"
         PMIAMECS: !GetAtt "MyIAMRole.Outputs.IAMECS"
+        PMIAMScalableTargetRole: !GetAtt "MyIAMRole.Outputs.IAMScalableTargetRole"
         PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
         PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
@@ -260,6 +263,23 @@ Resources:
 #        PMASDES: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASDES"]
 #        PMWEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
 #
+  MyCloudWatch:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+    #- "MyWEBAutoScaling"
+    - "MyAPPAutoScaling"
+    Properties:
+      TemplateURL: !Sub "${PMTemplateURL}/ecs-cloudwatch.yaml"
+      TimeoutInMinutes: '5'
+      Parameters:
+        #PMWebScalingGroup: !GetAtt "MyWEBAutoScaling.Outputs.WebScalingGroup"
+        #PMWebServerScaleUpPolicy: !GetAtt "MyWEBAutoScaling.Outputs.WebServerScaleUpPolicy"
+        #PMWebServerScaleDownPolicy: !GetAtt "MyWEBAutoScaling.Outputs.WebServerScaleDownPolicy"
+        PMAppScalingGroup: !GetAtt "MyAPPAutoScaling.Outputs.AppScalingGroup"
+        PMAPPServerScaleUpPolicy: !GetAtt "MyAPPAutoScaling.Outputs.APPServerScaleUpPolicy"
+        PMAPPServerScaleDownPolicy: !GetAtt "MyAPPAutoScaling.Outputs.APPServerScaleDownPolicy"
+
+
 #  MyDNS:
 #    Type: "AWS::CloudFormation::Stack"
 #    DependsOn:

@@ -119,8 +119,6 @@ Resources:
         - 
           Ref: "IAMECS"
 
-
-
   IAMECSServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -135,7 +133,42 @@ Resources:
           Action: 'sts:AssumeRole'
 
 
+  IAMScalableTargetRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: 'application-autoscaling.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+      - PolicyName: "ecs"
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - 'ecs:DescribeServices'
+            - 'ecs:UpdateService'
+            Resource: '*'
+      - PolicyName: "cloudwatch"
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - 'cloudwatch:DescribeAlarms'
+            Resource: '*'
+
+
 Outputs:
+
+  IAMScalableTargetRole:
+    Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
+    Value: !GetAtt "IAMScalableTargetRole.Arn"
 
   IAMECS:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
