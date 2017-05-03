@@ -73,6 +73,7 @@ Resources:
   WebCPUAlarmHigh:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
+      AlarmName: "WebCPUAlarmHigh"
       AlarmDescription: "Scale-up if CPU > 80% for 5 minutes"
       MetricName: "CPUUtilization"
       Namespace: "AWS/EC2"
@@ -92,6 +93,7 @@ Resources:
   WebCPUAlarmLow:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
+      AlarmName: "WebCPUAlarmLow"
       AlarmDescription: "Scale-down if CPU < 25% for 5 minutes"
       MetricName: "CPUUtilization"
       Namespace: "AWS/EC2"
@@ -111,6 +113,7 @@ Resources:
   AppCPUAlarmHigh:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
+      AlarmName: "AppInstanceCPUAlarmHigh"
       AlarmDescription: "Scale-up if CPU > 80% for 5 minutes"
       MetricName: "CPUUtilization"
       Namespace: "AWS/EC2"
@@ -130,6 +133,7 @@ Resources:
   AppCPUAlarmLow:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
+      AlarmName: "AppInstanceCPUAlarmLow"
       AlarmDescription: "Scale-down if CPU < 25% for 5 minutes"
       MetricName: "CPUUtilization"
       Namespace: "AWS/EC2"
@@ -148,6 +152,7 @@ Resources:
   ECSCPUAlarmHighSet1:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmHighSet1"
       AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -165,6 +170,7 @@ Resources:
   ECSCPUAlarmLowSet1:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmLowSet1"
       AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -182,6 +188,7 @@ Resources:
   ECSCPUAlarmHighSet2:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmHighSet2"
       AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -199,6 +206,7 @@ Resources:
   ECSCPUAlarmLowSet2:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmLowSet2"
       AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -216,6 +224,7 @@ Resources:
   ECSCPUAlarmHighSet3:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmHighSet3"
       AlarmDescription: 'Scale-up if CPU > 80% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -233,6 +242,7 @@ Resources:
   ECSCPUAlarmLowSet3:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: "ECSCPUAlarmLowSet3"
       AlarmDescription: 'Scale-down if CPU < 25% for 5 minutes'
       Namespace: 'AWS/ECS'
       Dimensions:

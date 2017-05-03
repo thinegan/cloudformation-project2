@@ -1,4 +1,4 @@
-# Note, the development environment will only spin a min of 1 instance (Not HA Support)
+# Note, the development environment will only spin a min of 2 instance (HA Support)
 # The production environment will spin a min of 2 instance (HA support)
 # You can adjust the ASMIN, ASMAX, ASDES at the master.yaml file
 # to meet your instances spin numbers.

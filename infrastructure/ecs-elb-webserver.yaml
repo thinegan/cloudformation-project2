@@ -26,10 +26,6 @@ Parameters:
     Description: "Subnets to launch instances into"
     Type: "List<AWS::EC2::Subnet::Id>"
 
-#  PMS3Backup:
-#    Description: "S3 Backup Bucket Name"
-#    Type: "String"
-#
   PMS3Logging:
     Description: "S3 Logging Bucket Name"
     Type: "String"
