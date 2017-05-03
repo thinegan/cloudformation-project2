@@ -69,7 +69,7 @@ The templates below are included in this repository and reference architecture:
 | --- | --- | 
 | [master.yaml](master.yaml) | This is the master template - deploy it to CloudFormation and it includes all of the nested templates automatically. |
 | [infrastructure/ecs-iam.yaml](infrastructure/ecs-iam.yaml) | This template deploys will create policy to allow EC2 instance full access to S3 & CloudWatch, EC2 Container service Role and VPC Logs to CloudWatch. |
-| [infrastructure/ecs-s3bucket.yaml](infrastructure/ecs-s3bucket.yaml) | This template deploys Backup ELB Loggin and archive objects greater than 60 days. |
+| [infrastructure/ecs-s3bucket.yaml](infrastructure/ecs-s3bucket.yaml) | This template deploys Backup ELB Logging and archive objects greater than 60 days. |
 | [infrastructure/ecs-vpc.yaml](infrastructure/ecs-vpc.yaml) | This template deploys a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an [Internet gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html), with a default route on the public subnets. It deploys 2 [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-comparison.html), and default routes for them in the private subnets. |
 | [infrastructure/ecs-securitygroup.yaml](infrastructure/ecs-securitygroup.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) and [Network ACLs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_ACLs.html) required by the entire stack. |
 | [infrastructure/ecs-rds.yaml](infrastructure/ecs-rds.yaml) | This template deploys a (Mysql) Relational Database Service. |
