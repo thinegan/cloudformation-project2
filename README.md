@@ -138,7 +138,7 @@ aws cloudformation create-stack \
 
 ### Adjust the Auto Scaling parameters for ECS hosts and services
 
-The Auto Scaling group scaling policy provided by default launches and maintains a cluster of hosts distributed across two Availability Zones (min: 2, max: 2, desired: 2).
+The Auto Scaling group scaling policy provided by default launches and maintains a cluster of hosts distributed across two Availability Zones (min: 2, max: 3, desired: 2).
 
 As well as configuring Auto Scaling for the ECS hosts (your pool of compute), you can also configure scaling each individual ECS service. This can be useful if you want to run more instances of each container/task depending on the load or time of day (or a custom CloudWatch metric). To do this, you need to create [AWS::ApplicationAutoScaling::ScalingPolicy](http://docs.aws.amazon.com/pt_br/AWSCloudFormation/latest/UserGuide/aws-resource-applicationautoscaling-scalingpolicy.html) within your service template.
 
@@ -171,14 +171,14 @@ PMHostedZone:
 # Update Auto Scaling parameters (MIN,MAX,Desired)
 dev:
   ASMIN: '2'
-  ASMAX: '2'
+  ASMAX: '3'
   ASDES: '2'
   WEBDOMAIN: "dev.kasturicookies.com"
   CDNDOMAIN: "devel.kasturicookies.com"
 
 staging:
   ASMIN: '2'
-  ASMAX: '2'
+  ASMAX: '3'
   ASDES: '2'
   WEBDOMAIN: "staging.kasturicookies.com"
   CDNDOMAIN: "static.kasturicookies.com"
@@ -230,7 +230,7 @@ If you found yourself wishing this set of frequently asked questions had an answ
 
 ## Contributing
 
-Please [create a new GitHub issue](https://github.com/thinegan/cloudformation-project1/issues/new) for any feature requests, bugs, or documentation improvements. 
+Please [create a new GitHub issue](https://github.com/thinegan/cloudformation-project2/issues/new) for any feature requests, bugs, or documentation improvements. 
 
 Where possible, please also [submit a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/) for the change. 
 
