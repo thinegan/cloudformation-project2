@@ -113,13 +113,13 @@ To create a environment :
 aws cloudformation create-stack \
 --stack-name <env> \
 --capabilities=CAPABILITY_IAM \
---template-body file:////path_to_template//cloudformation-project1//master.yaml
+--template-body file:////path_to_template//cloudformation-project2//master.yaml
 
 To update a environment :
 aws cloudformation update-stack \
 --stack-name <env> \
 --capabilities=CAPABILITY_IAM \
---template-body file:////path_to_template//cloudformation-project1//master.yaml
+--template-body file:////path_to_template//cloudformation-project2//master.yaml
 
 To delete a environment :
 aws cloudformation delete-stack --stack-name <env>
@@ -131,7 +131,7 @@ Example :
 aws cloudformation create-stack \
 --stack-name dev \
 --capabilities=CAPABILITY_IAM \
---template-body file:////path_to_template//cloudformation-project1//master.yaml
+--template-body file:////path_to_template//cloudformation-project2//master.yaml
 	
 ```
 
