@@ -68,22 +68,21 @@ The templates below are included in this repository and reference architecture:
 | Template | Description |
 | --- | --- | 
 | [master.yaml](master.yaml) | This is the master template - deploy it to CloudFormation and it includes all of the nested templates automatically. |
-| [infrastructure/webapp-iam.yaml](infrastructure/webapp-iam.yaml) | This template deploys will create policy to allow EC2 instance full access to S3 & CloudWatch, and VPC Logs to CloudWatch. |
-| [infrastructure/webapp-s3bucket.yaml](infrastructure/webapp-s3bucket.yaml) | This template deploys Backup Data Bucket with security data at rest and archive objects greater than 60 days, ELB logging, and Webhosting static content. |
-| [infrastructure/webapp-vpc.yaml](infrastructure/webapp-vpc.yaml) | This template deploys a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an [Internet gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html), with a default route on the public subnets. It deploys 2 [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-comparison.html), and default routes for them in the private subnets. |
-| [infrastructure/webapp-securitygroup.yaml](infrastructure/webapp-securitygroup.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) and [Network ACLs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_ACLs.html) required by the entire stack. |
-| [infrastructure/webapp-rds.yaml](infrastructure/webapp-rds.yaml) | This template deploys a (Mysql) Relational Database Service. |
-| [infrastructure/webapp-elb-appserver.yaml](infrastructure/webapp-elb-appserver.yaml) | This template deploys an Application Load Balancer that exposes our PHP APP services. |
-| [infrastructure/webapp-autoscaling-appserver.yaml](infrastructure/webapp-autoscaling-appserver.yaml) |This template deploys an ECS cluster to the private subnets using an Auto Scaling group. |
-| [infrastructure/webapp-elb-webserver.yaml](infrastructure/webapp-elb-webserver.yaml) | This template deploys a Webserver Load Balancer that exposes our Nginx Proxy services. |
-| [infrastructure/webapp-autoscaling-webserver.yaml](infrastructure/webapp-autoscaling-webserver.yaml) | This template deploys an ECS cluster to the private subnets using an Auto Scaling group. |
-| [infrastructure/webapp-cdn.yaml](infrastructure/webapp-cdn.yaml) | Run this template separately. CDN Deployment is time consuming ~(30-40min to complete deploy). |
-| [infrastructure/webapp-cloudwatch.yaml](infrastructure/webapp-cloudwatch.yaml) | This template deploys Cloudwatch Service, CPU Utilization Alarm. |
-| [infrastructure/webapp-route53.yaml](infrastructure/webapp-route53.yaml) | This template deploys Route 53 recordset to update ELB Alias and CNAME CDN. |
+| [infrastructure/ecs-iam.yaml](infrastructure/ecs-iam.yaml) | This template deploys will create policy to allow EC2 instance full access to S3 & CloudWatch, EC2 Container service Role and VPC Logs to CloudWatch. |
+| [infrastructure/ecs-s3bucket.yaml](infrastructure/ecs-s3bucket.yaml) | This template deploys Backup ELB Loggin and archive objects greater than 60 days. |
+| [infrastructure/ecs-vpc.yaml](infrastructure/ecs-vpc.yaml) | This template deploys a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an [Internet gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html), with a default route on the public subnets. It deploys 2 [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-comparison.html), and default routes for them in the private subnets. |
+| [infrastructure/ecs-securitygroup.yaml](infrastructure/ecs-securitygroup.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) and [Network ACLs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_ACLs.html) required by the entire stack. |
+| [infrastructure/ecs-rds.yaml](infrastructure/ecs-rds.yaml) | This template deploys a (Mysql) Relational Database Service. |
+| [infrastructure/ecs-elb-appserver.yaml](infrastructure/ecs-elb-appserver.yaml) | This template deploys an Application Load Balancer that exposes PHP ports services. |
+| [infrastructure/ecs-autoscaling-appserver.yaml](infrastructure/ecs-autoscaling-appserver.yaml) |This template deploys an ECS cluster to the private subnets using an Auto Scaling group. |
+| [infrastructure/ecs-elb-webserver.yaml](infrastructure/ecs-elb-webserver.yaml) | This template deploys a Webserver Load Balancer that exposes our Nginx Proxy services. |
+| [infrastructure/ecs-autoscaling-webserver.yaml](infrastructure/ecs-autoscaling-webserver.yaml) | This template deploys an EC2 instances to the public subnets using an Auto Scaling group. |
+| [infrastructure/ecs-cloudwatch.yaml](infrastructure/ecs-cloudwatch.yaml) | This template deploys Cloudwatch Service, CPU Utilization Alarm. |
+| [infrastructure/ecs-route53.yaml](infrastructure/ecs-route53.yaml) | This template deploys Route 53 recordset to update ELB (Web) Alias. |
 
 After the CloudFormation templates have been deployed, the [stack outputs](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html) contain a link to the load-balanced URLs for each of the deployed microservices.
 
-![stack-outputs](images/stack-outputs.png)
+![stack-outputs](images/cloudformation_stack_output.png)
 
 ## How do I...?
 
