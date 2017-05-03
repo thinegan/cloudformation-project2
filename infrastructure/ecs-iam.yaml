@@ -170,10 +170,6 @@ Outputs:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
     Value: !GetAtt "IAMScalableTargetRole.Arn"
 
-  IAMECS:
-    Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
-    Value: !Ref "IAMECS"
-
   IAMECSServiceRole:
     Description: "Policy to Allow EC2 instance full access to S3 & CloudWatch"
     Value: !Ref "IAMECSServiceRole"

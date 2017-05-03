@@ -25,17 +25,9 @@ Parameters:
     Description: "Subnets to launch instances into"
     Type: "List<AWS::EC2::Subnet::Id>"
 
-  PMPublicSubnets:
-    Description: "Subnets to launch instances into"
-    Type: "List<AWS::EC2::Subnet::Id>"
-
   PMS3Logging:
     Description: "S3 Logging Bucket Name"
     Type: "String"
-
-####### Condition Setup #######
-Conditions: 
-  UseProdEnv: !Equals [ !Ref "PMServerEnv", "prod" ]
 
 ####### Resources Setup #######
 Resources:
@@ -75,8 +67,7 @@ Resources:
       Scheme: "internal"
       SecurityGroups:
       - Ref: "PMAPPELBSG"
-      Subnets: !If [ "UseProdEnv", !Ref "PMPrivateSubnets", !Ref "PMPublicSubnets" ]
-      #Subnets: !Ref "PMPrivateSubnets"
+      Subnets: !Ref "PMPrivateSubnets"
 
 Outputs:
   APPLoadBalancer:

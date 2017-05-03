@@ -48,12 +48,6 @@ Parameters:
     Description: "VPC Flow Log Role Description"
     Type: "String"
 
-####### Condition Setup #######
-
-Conditions: 
-  UseProdEnv: !Equals [ !Sub "${PMServerEnv}", "prod" ]
-
-
 Resources:
 
 ####### Create custom VPC and send log to S3 bucket #######
@@ -216,21 +210,18 @@ Resources:
 
   MyNATGateway1EIP:
     Type: "AWS::EC2::EIP"
-    Condition: "UseProdEnv"
     DependsOn: "GatewayToInternet"
     Properties:
       Domain: "VPC"
 
   MyNATGateway2EIP:
     Type: "AWS::EC2::EIP"
-    Condition: "UseProdEnv"
     DependsOn: "GatewayToInternet"
     Properties:
       Domain: "VPC"
   
   MyNATGateway1:
     Type: "AWS::EC2::NatGateway"
-    Condition: "UseProdEnv"
     DependsOn: "GatewayToInternet"
     Properties:
       AllocationId:
@@ -241,7 +232,6 @@ Resources:
 
   MyNATGateway2:
     Type: "AWS::EC2::NatGateway"
-    Condition: "UseProdEnv"
     DependsOn: "GatewayToInternet"
     Properties:
       AllocationId:
@@ -252,7 +242,6 @@ Resources:
 
   MyNatPrivateRoute1:
     Type: "AWS::EC2::Route"
-    Condition: "UseProdEnv"
     Properties:
       RouteTableId: !Ref "MyPrivateRouteTable1"
       DestinationCidrBlock: "0.0.0.0/0"
@@ -260,7 +249,6 @@ Resources:
 
   MyNatPrivateRoute2:
     Type: "AWS::EC2::Route"
-    Condition: "UseProdEnv"
     Properties:
       RouteTableId: !Ref "MyPrivateRouteTable2"
       DestinationCidrBlock: "0.0.0.0/0"

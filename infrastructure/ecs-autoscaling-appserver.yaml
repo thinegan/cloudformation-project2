@@ -34,10 +34,6 @@ Parameters:
     Description: "Subnets to launch instances into"
     Type: "List<AWS::EC2::Subnet::Id>"
 
-  PMPublicSubnets:
-    Description: "Subnets to launch instances into"
-    Type: "List<AWS::EC2::Subnet::Id>"
-
   PMAPPHostSG:
     Description: "Select the Security Group to use for the EC2 hosts"
     Type: "AWS::EC2::SecurityGroup::Id"
@@ -51,10 +47,6 @@ Parameters:
     Type: "String"
 
   PMIAMECSInstanceProfile:
-    Description: "A reference to the IamInstanceProfile"
-    Type: "String"
-
-  PMIAMECS:
     Description: "A reference to the IamInstanceProfile"
     Type: "String"
 
@@ -81,11 +73,6 @@ Parameters:
   PMASDES:
     Description: "A reference to the DesiredCapacity"
     Type: "String"
-
-####### Condition Setup #######
-Conditions: 
-  UseProdEnv: !Equals [ !Ref "PMServerEnv", "prod" ]
-
 
 ####### Resources Setup #######
 Resources:
@@ -404,8 +391,7 @@ Resources:
     Type: "AWS::AutoScaling::LaunchConfiguration"
     DependsOn : "ECSCluster"
     Properties:
-      AssociatePublicIpAddress: "true"
-      #AssociatePublicIpAddress: "false"
+      AssociatePublicIpAddress: "false"
       KeyName:
         Ref: "PMKeyName"
       ImageId: 
@@ -459,8 +445,7 @@ Resources:
       DesiredCapacity: !Ref "PMASDES"
       LaunchConfigurationName:
         Ref: "LaunchConfiguration"
-      VPCZoneIdentifier: !If [ "UseProdEnv", !Ref "PMPrivateSubnets", !Ref "PMPublicSubnets" ]
-      #VPCZoneIdentifier: !Ref "PMPrivateSubnets"
+      VPCZoneIdentifier: !Ref "PMPrivateSubnets"
       LoadBalancerNames:
       - Ref: "PMAPPLoadBalancer"
       HealthCheckGracePeriod: "300"

@@ -201,7 +201,6 @@ Resources:
         PMServerEnv: !Ref "AWS::StackName"
         PMAPPELBSG: !GetAtt "MySecurityGroup.Outputs.APPELBSG"
         PMS3Logging: !GetAtt "MyS3Bucket.Outputs.S3Logging"
-        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
 
   MyAPPAutoScaling:
@@ -220,9 +219,7 @@ Resources:
         PMAPPLoadBalancer: !GetAtt "MyAPPELB.Outputs.APPLoadBalancer"
         PMIAMECSInstanceProfile: !GetAtt "MyIAMRole.Outputs.IAMECSInstanceProfile"
         PMIAMECSServiceRole: !GetAtt "MyIAMRole.Outputs.IAMECSServiceRole"
-        PMIAMECS: !GetAtt "MyIAMRole.Outputs.IAMECS"
         PMIAMScalableTargetRole: !GetAtt "MyIAMRole.Outputs.IAMScalableTargetRole"
-        PMPublicSubnets: !GetAtt "MyVPC.Outputs.PublicSubnets"
         PMPrivateSubnets: !GetAtt "MyVPC.Outputs.PrivateSubnets"
         PMASMIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMIN"]
         PMASMAX: !FindInMap ["EnvMap", !Ref "AWS::StackName", "ASMAX"]
